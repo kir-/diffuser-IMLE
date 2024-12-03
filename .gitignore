@@ -142,3 +142,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+#Ignore
+/diffuser/pyvenv.cfg
+
+# Mac
+.DS_Store
+
+# Binaries
+diffuser/share/
