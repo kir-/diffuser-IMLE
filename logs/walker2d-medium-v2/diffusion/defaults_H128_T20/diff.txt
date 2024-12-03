@@ -1,0 +1,90 @@
+diff --git a/config/locomotion.py b/config/locomotion.py
+index 90edd41..d670290 100644
+--- a/config/locomotion.py
++++ b/config/locomotion.py
+@@ -22,7 +22,8 @@ base = {
+         ## model
+         'model': 'models.TemporalUnet',
+         'diffusion': 'models.GaussianDiffusion',
+-        'horizon': 32,
++        # 'horizon': 32,
++        'horizon': 128, # _modified
+         'n_diffusion_steps': 20,
+         'action_weight': 10,
+         'loss_weights': None,
+diff --git a/diffuser/datasets/buffer.py b/diffuser/datasets/buffer.py
+index 1ad2106..7173329 100644
+--- a/diffuser/datasets/buffer.py
++++ b/diffuser/datasets/buffer.py
+@@ -9,7 +9,7 @@ class ReplayBuffer:
+ 
+     def __init__(self, max_n_episodes, max_path_length, termination_penalty):
+         self._dict = {
+-            'path_lengths': np.zeros(max_n_episodes, dtype=np.int),
++            'path_lengths': np.zeros(max_n_episodes, dtype=int),
+         }
+         self._count = 0
+         self.max_n_episodes = max_n_episodes
+diff --git a/diffuser/utils/rendering.py b/diffuser/utils/rendering.py
+index 8659ff1..b057d83 100644
+--- a/diffuser/utils/rendering.py
++++ b/diffuser/utils/rendering.py
+@@ -64,11 +64,16 @@ class MuJoCoRenderer:
+         ## - 1 because the envs in renderer are fully-observed
+         self.observation_dim = np.prod(self.env.observation_space.shape) - 1
+         self.action_dim = np.prod(self.env.action_space.shape)
+-        try:
+-            self.viewer = mjc.MjRenderContextOffscreen(self.env.sim)
+-        except:
+-            print('[ utils/rendering ] Warning: could not initialize offscreen renderer')
+-            self.viewer = None
++
++        # try:
++        #     self.viewer = mjc.MjRenderContextOffscreen(self.env.sim)
++        # except:
++        #     print('[ utils/rendering ] Warning: could not initialize offscreen renderer')
++        #     self.viewer = None
++
++        # _modified
++        self.viewer = mjc.MjRenderContextOffscreen(self.env.sim)
++
+ 
+     def pad_observation(self, observation):
+         state = np.concatenate([
+diff --git a/environment.yml b/environment.yml
+index c14a0cf..99b3cb6 100644
+--- a/environment.yml
++++ b/environment.yml
+@@ -4,13 +4,19 @@ channels:
+ - conda-forge
+ dependencies:
+ - python=3.8
+-- pip
+-- patchelf
++- setuptools == 63.2.0
++- wheel == 0.38.4
++- pip == 22.2.2
++- patchelf == 0.15.0.0
++- Cmake
++- cython == 0.29.36
++- numpy
++- cffi
++- lockfile
+ - pip:
+     - -f https://download.pytorch.org/whl/torch_stable.html
+-    - numpy
+     - gym==0.18.0
+-    - mujoco-py==2.0.2.13
++    - mujoco-py==2.0.2.5
+     - matplotlib==3.3.4
+     - torch==1.9.1+cu111
+     - typed-argument-parser
+@@ -21,7 +27,7 @@ dependencies:
+     - einops
+     - ffmpeg
+     - ffprobe
+-    - pillow
++    - pillow==7.2.0
+     - tqdm
+     - pandas
+     - wandb

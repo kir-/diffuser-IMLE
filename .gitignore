@@ -1,5 +1,5 @@
 bin/
-logs/
+# logs/
 wandb/
 
 *.sif
