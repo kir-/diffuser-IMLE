@@ -1,4 +1,5 @@
 import os
+import torch
 import pdb
 
 from doodad.wrappers.easy_launch import sweep_function, save_doodad_config
@@ -16,11 +17,19 @@ def remote_fn(doodad_config, variant):
     config = 'config.locomotion'
 
     d4rl_path = os.path.join(doodad_config.output_directory, 'datasets/')
+
+    # Dynamically determine device
+    if torch.cuda.is_available():
+        os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    elif torch.backends.mps.is_available():
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
+    else:
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
     os.system(f'ls -a {codepath}')
     os.system(f'mv {codepath}/git {codepath}/.git')
     os.system(
         f'''export PYTHONPATH=$PYTHONPATH:{codepath} && '''
-        f'''export CUDA_VISIBLE_DEVICES=0 && '''
         f'''export D4RL_DATASET_DIR={d4rl_path} && '''
         f'''python {os.path.join(codepath, script)} '''
         f'''--config {config} '''

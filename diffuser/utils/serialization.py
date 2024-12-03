@@ -33,7 +33,7 @@ def load_config(*loadpath):
     print(config)
     return config
 
-def load_diffusion(*loadpath, epoch='latest', device='cuda:0', seed=None):
+def load_diffusion(*loadpath, epoch='latest', device='mps', seed=None):
     dataset_config = load_config(*loadpath, 'dataset_config.pkl')
     render_config = load_config(*loadpath, 'render_config.pkl')
     model_config = load_config(*loadpath, 'model_config.pkl')
@@ -54,8 +54,11 @@ def load_diffusion(*loadpath, epoch='latest', device='cuda:0', seed=None):
         epoch = get_latest_epoch(loadpath)
 
     print(f'\n[ utils/serialization ] Loading model epoch: {epoch}\n')
-
-    trainer.load(epoch)
+    
+    # Ensure compatibility with MPS or CPU
+    map_location = torch.device(device) if torch.backends.mps.is_available() else torch.device('cpu')
+    trainer.load(epoch, map_location=map_location)
+    # trainer.load(epoch)
 
     return DiffusionExperiment(dataset, renderer, model, diffusion, trainer.ema_model, trainer, epoch)
 

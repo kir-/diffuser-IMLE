@@ -30,11 +30,14 @@ def run_diffusion(model, dataset, obs, n_samples=1, device='cuda:0', **diffusion
     0: to_torch(obs, device=device)
   }
 
-  samples, diffusion = model.conditional_sample(conditions,
-        return_diffusion=True, verbose=False, **diffusion_kwargs)
+  sample = model.conditional_sample(conditions,
+        return_chain=True, verbose=False, **diffusion_kwargs)
+  trajectories = sample.trajectories
+  values = sample.values
+  chains = sample.chains
 
   ## [ n_samples x (n_diffusion_steps + 1) x horizon x (action_dim + observation_dim)]
-  diffusion = to_np(diffusion)
+  diffusion = to_np(chains)
 
   ## extract observations
   ## [ n_samples x (n_diffusion_steps + 1) x horizon x observation_dim ]

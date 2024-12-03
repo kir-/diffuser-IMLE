@@ -2,8 +2,13 @@ import os
 import copy
 import numpy as np
 import torch
+import torch.multiprocessing as mp
 import einops
 import pdb
+
+# Ensure multiprocessing uses 'spawn' safely
+if __name__ == "__main__":
+    mp.set_start_method('spawn', force=True)
 
 from .arrays import batch_to_device, to_np, to_device, apply_dict
 from .timer import Timer
@@ -11,7 +16,7 @@ from .cloud import sync_logs
 
 def cycle(dl):
     while True:
-        for data in dl:
+        for data in iter(dl):
             yield data
 
 class EMA():
@@ -71,7 +76,8 @@ class Trainer(object):
 
         self.dataset = dataset
         self.dataloader = cycle(torch.utils.data.DataLoader(
-            self.dataset, batch_size=train_batch_size, num_workers=1, shuffle=True, pin_memory=True
+            # TODO Get it to work with MPS for >0 workers
+            self.dataset, batch_size=train_batch_size, num_workers=0, shuffle=True, pin_memory=True
         ))
         self.dataloader_vis = cycle(torch.utils.data.DataLoader(
             self.dataset, batch_size=1, num_workers=0, shuffle=True, pin_memory=True
@@ -149,12 +155,12 @@ class Trainer(object):
         if self.bucket is not None:
             sync_logs(self.logdir, bucket=self.bucket, background=self.save_parallel)
 
-    def load(self, epoch):
+    def load(self, epoch, map_location=torch.device('cpu')):
         '''
             loads model and ema from disk
         '''
         loadpath = os.path.join(self.logdir, f'state_{epoch}.pt')
-        data = torch.load(loadpath)
+        data = torch.load(loadpath, map_location=map_location)  # Map to the specified device
 
         self.step = data['step']
         self.model.load_state_dict(data['model'])
@@ -195,7 +201,7 @@ class Trainer(object):
 
             ## get a single datapoint
             batch = self.dataloader_vis.__next__()
-            conditions = to_device(batch.conditions, 'cuda:0')
+            conditions = to_device(batch.conditions, 'mps')
 
             ## repeat each item in conditions `n_samples` times
             conditions = apply_dict(
