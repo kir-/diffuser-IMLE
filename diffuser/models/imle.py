@@ -79,9 +79,10 @@ class IMLEModel(nn.Module):
             torch.Tensor: Generated trajectories [batch_size, horizon, output_dim].
         """
         batch_size = len(cond[0])
+        # Should be latent shape?
         shape = (batch_size, self.horizon, self.transition_dim)
-        x = torch.randn(shape, device='mps')
-        cond_tensor = torch.stack([cond[key] for key in sorted(cond.keys())], dim=1) 
+        cond_tensor = torch.stack([cond[key] for key in sorted(cond.keys())], dim=1)
+        x = torch.randn(shape, device=cond_tensor.device)
         trajectories = self.generator(x, cond_tensor)
         values = torch.zeros(batch_size, device=trajectories.device)
         return Sample(trajectories=trajectories, values=values)
@@ -93,7 +94,6 @@ class IMLEModel(nn.Module):
         nns = torch.tensor([find_nn(d, generated) for d in x], dtype=torch.long, device=x.device)
         imle_nn_z = zs[nns] + torch.randn_like(zs[nns]) * self.noise_coef
         outs = self.generator(imle_nn_z, cond_tensor)
-        # print('outs:',outs)
         return self.loss_fn(outs, x)
 
 class ValueIMLE(IMLEModel):
@@ -111,10 +111,6 @@ class ValueIMLE(IMLEModel):
         Returns:
             torch.Tensor: Computed loss.
         """
-        # Implement your custom loss computation here
-        # For example, if you're incorporating time steps or additional target values
-
-        # You might generate outputs using the parent class's methods
         loss = super().loss(x, cond)
 
         return loss

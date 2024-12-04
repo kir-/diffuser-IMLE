@@ -159,11 +159,7 @@ class IMLELoss(nn.Module):
         '''
         pred, targ : tensors of shape [batch_size, horizon, transition_dim]
         '''
-        # print('pred:', pred)
-        # print(pred.shape)
-        # print(targ.shape)
         loss = F.mse_loss(pred, targ, reduction='none')  # Per-sample loss
-        # print('loss:', loss)
         weighted_loss = (loss * self.weights).mean()  # Weighted aggregation
         a0_loss = (loss[:, 0, :self.action_dim] / self.weights[0, :self.action_dim]).mean() 
         return weighted_loss, {'a0_loss': a0_loss}

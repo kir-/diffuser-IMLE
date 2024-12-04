@@ -174,7 +174,7 @@ class TemporalUnetIMLE(nn.Module):
         return x
 
 
-class ValueFunction(nn.Module):
+class ValueFunctionIMLE(nn.Module):
     def __init__(
         self,
         horizon,

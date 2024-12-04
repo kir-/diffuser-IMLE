@@ -62,13 +62,13 @@ base = {
         'save_parallel': False,
         'n_reference': 8,
         'bucket': None,
-        'device': 'mps',
+        'device': 'cuda',
         'seed': None,
     },
 
     'values': {
-        'model': 'models.ValueIMLE',
-        # 'diffusion': 'imle_value_l2',
+        'model': 'models.ValueFunctionIMLE',
+        # 'imle': 'ValueIMLE',
         'horizon': 32,
         'dim_mults': (1, 2, 4, 8),
         'renderer': 'utils.MuJoCoRenderer',
@@ -104,7 +104,7 @@ base = {
         'save_parallel': False,
         'n_reference': 8,
         'bucket': None,
-        'device': 'mps',
+        'device': 'cuda',
         'seed': None,
     },
 
@@ -114,7 +114,7 @@ base = {
         'max_episode_length': 1000,
         'batch_size': 64,
         'preprocess_fns': [],
-        'device': 'mps',
+        'device': 'cuda',
         'seed': None,
 
         ## sample_kwargs
