@@ -67,7 +67,7 @@ base = {
     },
 
     'values': {
-        'model': 'models.IMLEValueFunction',
+        'model': 'models.ValueIMLE',
         # 'diffusion': 'imle_value_l2',
         'horizon': 32,
         'dim_mults': (1, 2, 4, 8),

@@ -149,6 +149,25 @@ def apply_conditioning(x, conditions, action_dim):
 #---------------------------------- losses -----------------------------------#
 #-----------------------------------------------------------------------------#
 
+class IMLELoss(nn.Module):
+    def __init__(self, weights, action_dim):
+        super().__init__()
+        self.register_buffer('weights', weights)
+        self.action_dim = action_dim
+
+    def forward(self, pred, targ):
+        '''
+        pred, targ : tensors of shape [batch_size, horizon, transition_dim]
+        '''
+        # print('pred:', pred)
+        # print(pred.shape)
+        # print(targ.shape)
+        loss = F.mse_loss(pred, targ, reduction='none')  # Per-sample loss
+        # print('loss:', loss)
+        weighted_loss = (loss * self.weights).mean()  # Weighted aggregation
+        a0_loss = (loss[:, 0, :self.action_dim] / self.weights[0, :self.action_dim]).mean() 
+        return weighted_loss, {'a0_loss': a0_loss}
+    
 class WeightedLoss(nn.Module):
 
     def __init__(self, weights, action_dim):
@@ -199,54 +218,6 @@ class WeightedL2(WeightedLoss):
 
     def _loss(self, pred, targ):
         return F.mse_loss(pred, targ, reduction='none')
-    
-class IMLELoss(nn.Module):
-    def __init__(self, generator_model, zdim, sample_factor, noise_coef):
-        super().__init__()
-        self.generator = generator_model
-        self.zdim = zdim
-        self.sample_factor = sample_factor
-        self.noise_coef = noise_coef
-        self.generated = None
-        self.imle_nn_z = None
-
-    def forward(self, data):
-        '''
-            data : tensor
-                [ n x feature_dim ] - real data points
-        '''
-        n = data.shape[0]
-        nz = n * self.sample_factor
-
-        # Generate latent samples and map them to output space
-        with torch.no_grad():
-            self.generator.eval()
-            zs = torch.randn(nz, self.zdim, device=data.device)
-            self.generated = self.generator(zs).detach()
-
-            # Find nearest neighbors TODO if cuda is available use https://github.com/niopeng/dciknn_cuda
-            nns = torch.tensor(
-                [self.find_nn(d, self.generated) for d in data],
-                dtype=torch.long,
-                device=data.device
-            )
-            self.imle_nn_z = zs[nns] + torch.randn(nns.shape[0], self.zdim, device=data.device) * self.noise_coef
-
-        # Compute loss
-        self.generator.train()
-        outs = self.generator(self.imle_nn_z)
-        dists = torch.sum((outs - data)**2, dim=1)
-        loss = dists.mean()
-
-        return loss, {'loss': loss.item()}
-
-    def find_nn(self, data_point, generated):
-        '''
-            Find the index of the nearest neighbor in the generated data for a given data point
-        '''
-        dists = torch.sum((generated - data_point) ** 2, dim=1)
-        return torch.argmin(dists).item()
-
 
 class ValueL1(ValueLoss):
 
@@ -263,4 +234,5 @@ Losses = {
     'l2': WeightedL2,
     'value_l1': ValueL1,
     'value_l2': ValueL2,
+    'IMLE': IMLELoss
 }

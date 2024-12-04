@@ -2,7 +2,16 @@ import torch
 import torch.nn as nn
 from collections import namedtuple
 
+from .helpers import (
+    Losses,
+)
+
 Sample = namedtuple("Sample", "trajectories values")
+
+def find_nn(data_point, generated):
+    dists = torch.sum((generated - data_point)**2, dim=1)
+    dists = dists**0.5
+    return torch.argmin(dists).item()
 
 class IMLEModel(nn.Module):
     def __init__(
@@ -11,113 +20,93 @@ class IMLEModel(nn.Module):
         horizon,
         observation_dim,
         action_dim,
-        loss_type="l2",
+        loss_type="IMLE",
         sample_factor=10,
         noise_coef=0.1,
         staleness=20,
         z_dim=32,
+        action_weight=1.0,
+        loss_discount=1.0,
+        loss_weights=None,
     ):
         super().__init__()
         self.horizon = horizon
-        self.observation_dim = observation_dim
-        self.action_dim = action_dim
-        self.generator = model  # IMLE Unet
-
+        self.generator = model
+        self.transition_dim = observation_dim + action_dim
         # IMLE Properties
         self.sample_factor = sample_factor
         self.noise_coef = noise_coef
         self.staleness = staleness
         self.z_dim = z_dim
+        self.action_dim = action_dim
+        loss_weights = self.get_loss_weights(action_weight, loss_discount, loss_weights)
+        self.loss_fn = Losses[loss_type](loss_weights, self.action_dim)
 
-        self.loss_fn = nn.MSELoss() if loss_type == "l2" else nn.L1Loss()
+    def get_loss_weights(self, action_weight, discount, weights_dict):
+        '''
+            sets loss coefficients for trajectory
 
-    def forward(self, latents, s_t):
+            action_weight   : float
+                coefficient on first action loss
+            discount   : float
+                multiplies t^th timestep of trajectory loss by discount**t
+            weights_dict    : dict
+                { i: c } multiplies dimension i of observation loss by c
+        '''
+        self.action_weight = action_weight
+
+        dim_weights = torch.ones(self.transition_dim, dtype=torch.float32)
+
+        ## set loss coefficients for dimensions of observation
+        if weights_dict is None: weights_dict = {}
+        for ind, w in weights_dict.items():
+            dim_weights[self.action_dim + ind] *= w
+
+        ## decay loss with trajectory timestep: discount**t
+        discounts = discount ** torch.arange(self.horizon, dtype=torch.float)
+        discounts = discounts / discounts.mean()
+        loss_weights = torch.einsum('h,t->ht', discounts, dim_weights)
+
+        ## manually set a0 weight
+        loss_weights[0, :self.action_dim] = action_weight
+        return loss_weights
+
+    def forward(self, cond, *args, **kwargs):
         """
         Forward pass through the generator.
-
-        Args:
-            latents (torch.Tensor): Latent variables [batch_size, horizon, z_dim].
-            s_t (torch.Tensor): Conditioning variable [batch_size, cond_dim].
 
         Returns:
             torch.Tensor: Generated trajectories [batch_size, horizon, output_dim].
         """
-        return self.generator(latents, s_t)
-
-    def loss(self, x, s_t):
-        """
-        Compute the IMLE loss.
-
-        Args:
-            x (torch.Tensor): Ground truth trajectories [batch_size, horizon, output_dim].
-            s_t (torch.Tensor): Conditioning states [batch_size, cond_dim].
-
-        Returns:
-            torch.Tensor: Computed loss.
-        """
-        batch_size = x.size(0)
-        n_samples = batch_size * self.sample_factor
-
-        # Generate latent samples
-        latents = torch.randn(
-            n_samples, self.horizon, self.z_dim, device=x.device
-        )  # [n_samples, horizon, z_dim]
-
-        # Expand s_t to match n_samples
-        s_t_expanded = s_t.unsqueeze(1).expand(-1, self.sample_factor, -1)
-        s_t_expanded = s_t_expanded.reshape(
-            n_samples, -1
-        )  # [n_samples, cond_dim]
-
-        # Generate samples conditioned on s_t
-        generated = self.generator(latents, s_t_expanded)  # [n_samples, horizon, output_dim]
-
-        # Reshape x for distance computation
-        x_expanded = x.unsqueeze(1).expand(-1, self.sample_factor, -1, -1)
-        x_expanded = x_expanded.reshape(
-            n_samples, self.horizon, x.size(2)
-        )  # [n_samples, horizon, output_dim]
-
-        # Compute distances between x and generated samples
-        distances = ((x_expanded - generated) ** 2).sum(dim=[1, 2])  # [n_samples]
-
-        # Reshape distances to [batch_size, sample_factor]
-        distances = distances.view(batch_size, self.sample_factor)  # [batch_size, sample_factor]
-
-        # Find nearest neighbors
-        nns = distances.argmin(dim=1)  # [batch_size]
-
-        # Calculate indices for nearest latents
-        indices = nns + torch.arange(batch_size, device=x.device) * self.sample_factor  # [batch_size]
-
-        # Get nearest latents
-        nearest_latents = latents[indices]  # [batch_size, horizon, z_dim]
-
-        # Perturb latents
-        noise = torch.randn_like(nearest_latents) * self.noise_coef  # [batch_size, horizon, z_dim]
-        perturbed_latents = nearest_latents + noise  # [batch_size, horizon, z_dim]
-
-        # Generate outputs using perturbed latents and s_t
-        outputs = self.generator(perturbed_latents, s_t)  # [batch_size, horizon, output_dim]
-
-        # Compute loss
-        loss = self.loss_fn(outputs, x)  # [1]
-
-        return loss
+        batch_size = len(cond[0])
+        shape = (batch_size, self.horizon, self.transition_dim)
+        x = torch.randn(shape, device='mps')
+        cond_tensor = torch.stack([cond[key] for key in sorted(cond.keys())], dim=1) 
+        trajectories = self.generator(x, cond_tensor)
+        values = torch.zeros(batch_size, device=trajectories.device)
+        return Sample(trajectories=trajectories, values=values)
+    
+    def loss(self, x, cond):
+        zs = torch.randn_like(x)
+        cond_tensor = torch.stack([cond[key] for key in sorted(cond.keys())], dim=1) 
+        generated = self.generator(zs, cond_tensor).detach()
+        nns = torch.tensor([find_nn(d, generated) for d in x], dtype=torch.long, device=x.device)
+        imle_nn_z = zs[nns] + torch.randn_like(zs[nns]) * self.noise_coef
+        outs = self.generator(imle_nn_z, cond_tensor)
+        # print('outs:',outs)
+        return self.loss_fn(outs, x)
 
 class ValueIMLE(IMLEModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
     
-    def loss(self, x, s_t, target, t):
+    def loss(self, x, cond):
         """
-        Compute the loss for ValueIMLE, potentially incorporating time step `t`.
+        Compute the loss for ValueIMLE,
 
         Args:
             x (torch.Tensor): Ground truth trajectories [batch_size, horizon, output_dim].
             s_t (torch.Tensor): Conditioning states [batch_size, cond_dim].
-            target (torch.Tensor): Target values for loss computation.
-            t (torch.Tensor or float): Time step.
 
         Returns:
             torch.Tensor: Computed loss.
@@ -126,7 +115,6 @@ class ValueIMLE(IMLEModel):
         # For example, if you're incorporating time steps or additional target values
 
         # You might generate outputs using the parent class's methods
-        loss = super().loss(x, s_t)
-        # Then adjust the loss based on `target` and `t` as needed
+        loss = super().loss(x, cond)
 
         return loss

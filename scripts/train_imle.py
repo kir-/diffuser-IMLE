@@ -43,20 +43,14 @@ action_dim = dataset.action_dim
 #------------------------------ model & trainer ------------------------------#
 #-----------------------------------------------------------------------------#
 
-# Calculate input_dim and output_dim based on previous suggestions
-input_dim = args.z_dim + observation_dim  # z_dim + state_dim (s_t)
-output_dim = observation_dim + action_dim  # s_{t+1:t+f}, a_{t:t+f}
-cond_dim = observation_dim  # Since cond is s_t
-
-# Remove 'transition_dim' as it's not used in the model initialization
 model_config = utils.Config(
     args.model,
     savepath=(args.savepath, 'model_config.pkl'),
     horizon=args.horizon,
-    input_dim=input_dim,
-    output_dim=output_dim,
-    cond_dim=cond_dim,
+    transition_dim=observation_dim + action_dim,
+    cond_dim=observation_dim,
     dim_mults=args.dim_mults,
+    attention=args.attention,
     device=args.device,
 )
 
@@ -64,6 +58,8 @@ imle_config = utils.Config(
     args.imle,
     savepath=(args.savepath, 'imle_config.pkl'),
     horizon=args.horizon,
+    observation_dim=observation_dim,
+    action_dim=action_dim,
     sample_factor=args.sample_factor,
     noise_coef=args.noise_coef,
     z_dim=args.z_dim,
@@ -102,42 +98,15 @@ trainer = trainer_config(imle, dataset, renderer)
 
 utils.report_parameters(model)
 
-def batchify(batch):
-    """
-    Converts a Batch object into tensors for model input.
-
-    Args:
-        batch: A Batch object with 'trajectories' and 'conditions'.
-
-    Returns:
-        x: Tensor of trajectories [batch_size, horizon, feature_dim].
-        s_t: Tensor of initial states [batch_size, cond_dim].
-    """
-    # Extract trajectories and conditions from the batch
-    trajectory = batch.trajectories  # NumPy array: [horizon, feature_dim]
-    s_t = batch.conditions[0]        # NumPy array: [cond_dim]
-
-    # Convert to tensors and add batch dimension
-    x = torch.tensor(trajectory, dtype=torch.float32).unsqueeze(0)  # [1, horizon, feature_dim]
-    s_t = torch.tensor(s_t, dtype=torch.float32).unsqueeze(0)       # [1, cond_dim]
-
-    return x, s_t
-
 print('Testing forward...', end=' ', flush=True)
-x_batch, s_t_batch = batchify(dataset[0])
-
-# Move tensors to the correct device
-x_batch = x_batch.to(args.device)
-s_t_batch = s_t_batch.to(args.device)
-
-# Compute loss and perform backward pass
-loss = imle.loss(x_batch, s_t_batch)
+batch = utils.batchify(dataset[0])
+loss, _ = imle.loss(*batch)
 loss.backward()
 print('✓')
 
-#-----------------------------------------------------------------------------#
-#--------------------------------- main loop ---------------------------------#
-#-----------------------------------------------------------------------------#
+# #-----------------------------------------------------------------------------#
+# #--------------------------------- main loop ---------------------------------#
+# #-----------------------------------------------------------------------------#
 
 n_epochs = int(args.n_train_steps // args.n_steps_per_epoch)
 
