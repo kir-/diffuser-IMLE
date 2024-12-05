@@ -9,6 +9,10 @@ from .helpers import (
 Sample = namedtuple("Sample", "trajectories values")
 
 def find_nn(data_point, generated):
+    
+    data_point = data_point.reshape(-1)
+    generated = generated.reshape(generated.shape[0], -1)
+
     dists = torch.sum((generated - data_point)**2, dim=1)
     dists = dists**0.5
     return torch.argmin(dists).item()

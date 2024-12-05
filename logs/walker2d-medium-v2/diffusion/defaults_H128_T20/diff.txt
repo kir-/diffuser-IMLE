@@ -1,5 +1,16 @@
+diff --git a/.gitignore b/.gitignore
+index 378016b..56ecee2 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,5 +1,5 @@
+ bin/
+-# logs/
++logs/
+ wandb/
+ 
+ *.sif
 diff --git a/config/locomotion.py b/config/locomotion.py
-index 90edd41..d670290 100644
+index 90edd41..7a65f46 100644
 --- a/config/locomotion.py
 +++ b/config/locomotion.py
 @@ -22,7 +22,8 @@ base = {
@@ -8,83 +19,274 @@ index 90edd41..d670290 100644
          'diffusion': 'models.GaussianDiffusion',
 -        'horizon': 32,
 +        # 'horizon': 32,
-+        'horizon': 128, # _modified
++        'horizon': 128,
          'n_diffusion_steps': 20,
          'action_weight': 10,
          'loss_weights': None,
-diff --git a/diffuser/datasets/buffer.py b/diffuser/datasets/buffer.py
-index 1ad2106..7173329 100644
---- a/diffuser/datasets/buffer.py
-+++ b/diffuser/datasets/buffer.py
-@@ -9,7 +9,7 @@ class ReplayBuffer:
- 
-     def __init__(self, max_n_episodes, max_path_length, termination_penalty):
-         self._dict = {
--            'path_lengths': np.zeros(max_n_episodes, dtype=np.int),
-+            'path_lengths': np.zeros(max_n_episodes, dtype=int),
-         }
-         self._count = 0
-         self.max_n_episodes = max_n_episodes
-diff --git a/diffuser/utils/rendering.py b/diffuser/utils/rendering.py
-index 8659ff1..b057d83 100644
---- a/diffuser/utils/rendering.py
-+++ b/diffuser/utils/rendering.py
-@@ -64,11 +64,16 @@ class MuJoCoRenderer:
-         ## - 1 because the envs in renderer are fully-observed
-         self.observation_dim = np.prod(self.env.observation_space.shape) - 1
-         self.action_dim = np.prod(self.env.action_space.shape)
--        try:
--            self.viewer = mjc.MjRenderContextOffscreen(self.env.sim)
--        except:
--            print('[ utils/rendering ] Warning: could not initialize offscreen renderer')
--            self.viewer = None
-+
-+        # try:
-+        #     self.viewer = mjc.MjRenderContextOffscreen(self.env.sim)
-+        # except:
-+        #     print('[ utils/rendering ] Warning: could not initialize offscreen renderer')
-+        #     self.viewer = None
-+
-+        # _modified
-+        self.viewer = mjc.MjRenderContextOffscreen(self.env.sim)
-+
- 
-     def pad_observation(self, observation):
-         state = np.concatenate([
-diff --git a/environment.yml b/environment.yml
-index c14a0cf..99b3cb6 100644
---- a/environment.yml
-+++ b/environment.yml
-@@ -4,13 +4,19 @@ channels:
- - conda-forge
- dependencies:
- - python=3.8
--- pip
--- patchelf
-+- setuptools == 63.2.0
-+- wheel == 0.38.4
-+- pip == 22.2.2
-+- patchelf == 0.15.0.0
-+- Cmake
-+- cython == 0.29.36
-+- numpy
-+- cffi
-+- lockfile
- - pip:
-     - -f https://download.pytorch.org/whl/torch_stable.html
--    - numpy
-     - gym==0.18.0
--    - mujoco-py==2.0.2.13
-+    - mujoco-py==2.0.2.5
-     - matplotlib==3.3.4
-     - torch==1.9.1+cu111
-     - typed-argument-parser
-@@ -21,7 +27,7 @@ dependencies:
-     - einops
-     - ffmpeg
-     - ffprobe
--    - pillow
-+    - pillow==7.2.0
-     - tqdm
-     - pandas
-     - wandb
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/_sample-reference.png b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/_sample-reference.png
+deleted file mode 100644
+index 6e8d539..0000000
+Binary files a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/_sample-reference.png and /dev/null differ
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/args.json b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/args.json
+index 0cdfccb..3904be3 100644
+--- a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/args.json
++++ b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/args.json
+@@ -3,13 +3,13 @@
+     "add_extras": {
+         "_string": "<bound method Parser.add_extras of Parser(prog='train.py', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)>",
+         "_type": "python_object (type = method)",
+-        "_value": "gASVqwQAAAAAAACMCGJ1aWx0aW5zlIwHZ2V0YXR0cpSTlIwIX19tYWluX1+UjAZQYXJzZXKUk5QpgZR9lCiMB2xvZ2Jhc2WUjARsb2dzlIwLdXNlX3BhZGRpbmeUiIwJc2F2ZV9mcmVxlE0gTowLc2FtcGxlX2ZyZXGUTSBOjAhyZW5kZXJlcpSMFHV0aWxzLk11Sm9Db1JlbmRlcmVylIwNbl90cmFpbl9zdGVwc5RHQS6EgAAAAACMGWdyYWRpZW50X2FjY3VtdWxhdGVfZXZlcnmUSwKMBmJ1Y2tldJROjAlhdHRlbnRpb26UiYwGY29tbWl0lIwtN2VhNDIyODYwY2MwMTA2ZTVjYTU5NDlkOTgwZjA0Yjc5OWQ1NDYyYyBtYWlulIwJbG9zc190eXBllIwCbDKUjAZsb2FkZXKUjBhkYXRhc2V0cy5TZXF1ZW5jZURhdGFzZXSUjAxsb3NzX3dlaWdodHOUTowOcHJlcHJvY2Vzc19mbnOUXZSMD21heF9wYXRoX2xlbmd0aJRN6AOMC3JlYWRfY29uZmlnlGgCaAZoHYaUUpSMCmdldF9jb21taXSUaAJoBmgghpRSlIwFbWtkaXKUaAJoBmgjhpRSlIwJc2F2ZV9kaWZmlGgCaAZoJoaUUpSMBnByZWZpeJSMEmRpZmZ1c2lvbi9kZWZhdWx0c5SMB2hvcml6b26US4CMCmJhdGNoX3NpemWUSyCMB25fc2F2ZXOUSwWMDWxlYXJuaW5nX3JhdGWURz8qNuLrHEMtjAlkaWZmdXNpb26UjBhtb2RlbHMuR2F1c3NpYW5EaWZmdXNpb26UjApub3JtYWxpemVylIwSR2F1c3NpYW5Ob3JtYWxpemVylIwRbl9zdGVwc19wZXJfZXBvY2iUTRAnjA1sb3NzX2Rpc2NvdW50lEsBjAphZGRfZXh0cmFzlGgCaAZoNYaUUpSMDWNsaXBfZGVub2lzZWSUiYwLbl9yZWZlcmVuY2WUSwiMBmRldmljZZSMBGN1ZGGUjAllbWFfZGVjYXmURz/v1wo9cKPXjAxzZXRfbG9hZGJhc2WUaAJoBmg9hpRSlIwPcHJlZGljdF9lcHNpbG9ulImMBW1vZGVslIwTbW9kZWxzLlRlbXBvcmFsVW5ldJSMB2RhdGFzZXSUjBJ3YWxrZXIyZC1tZWRpdW0tdjKUjA1ldmFsX2ZzdHJpbmdzlGgCaAZoRYaUUpSMEW5fZGlmZnVzaW9uX3N0ZXBzlEsUjAhleHBfbmFtZZSMG2RpZmZ1c2lvbi9kZWZhdWx0c19IMTI4X1QyMJSMDWFjdGlvbl93ZWlnaHSUSwqMBHNlZWSUTowIc2F2ZXBhdGiUjDNsb2dzL3dhbGtlcjJkLW1lZGl1bS12Mi9kaWZmdXNpb24vZGVmYXVsdHNfSDEyOF9UMjCUjAZjb25maWeUjBFjb25maWcubG9jb21vdGlvbpSMCWRpbV9tdWx0c5QoSwFLAksESwh0lIwIc2V0X3NlZWSUaAJoBmhThpRSlIwNc2F2ZV9wYXJhbGxlbJSJjBFnZW5lcmF0ZV9leHBfbmFtZZRoAmgGaFeGlFKUdWJoNYaUUpQu"
++        "_value": "gASVrQQAAAAAAACMCGJ1aWx0aW5zlIwHZ2V0YXR0cpSTlIwIX19tYWluX1+UjAZQYXJzZXKUk5QpgZR9lCiMCGV4cF9uYW1llIwbZGlmZnVzaW9uL2RlZmF1bHRzX0gxMjhfVDIwlIwJbG9zc190eXBllIwCbDKUjAZkZXZpY2WUjARjdWRhlIwMc2V0X2xvYWRiYXNllGgCaAZoDoaUUpSMCXNhdmVfZGlmZpRoAmgGaBGGlFKUjAlzYXZlX2ZyZXGUTSBOjAxsb3NzX3dlaWdodHOUTowGY29tbWl0lIwvMGE2ZmViZWQzY2Y1OTIyOTQ0OTU4MzAzYjE2NjIzMjBhNzNhOGFhNSB5YW5rYWmUjA9wcmVkaWN0X2Vwc2lsb26UiYwOcHJlcHJvY2Vzc19mbnOUXZSMBmxvYWRlcpSMGGRhdGFzZXRzLlNlcXVlbmNlRGF0YXNldJSMBW1rZGlylGgCaAZoHYaUUpSMCHJlbmRlcmVylIwUdXRpbHMuTXVKb0NvUmVuZGVyZXKUjBFuX3N0ZXBzX3Blcl9lcG9jaJRNECeMDWFjdGlvbl93ZWlnaHSUSwqMBmJ1Y2tldJROjAtuX3JlZmVyZW5jZZRLCIwFbW9kZWyUjBNtb2RlbHMuVGVtcG9yYWxVbmV0lIwHbG9nYmFzZZSMBGxvZ3OUjBFuX2RpZmZ1c2lvbl9zdGVwc5RLFIwLdXNlX3BhZGRpbmeUiIwKYmF0Y2hfc2l6ZZRLIIwIc2V0X3NlZWSUaAJoBmgthpRSlIwLc2FtcGxlX2ZyZXGUTSBOjAZwcmVmaXiUjBJkaWZmdXNpb24vZGVmYXVsdHOUjA1ldmFsX2ZzdHJpbmdzlGgCaAZoM4aUUpSMDWxlYXJuaW5nX3JhdGWURz8qNuLrHEMtjARzZWVklE6MCmdldF9jb21taXSUaAJoBmg4hpRSlIwPbWF4X3BhdGhfbGVuZ3RolE3oA4wJZW1hX2RlY2F5lEc/79cKPXCj14wHaG9yaXpvbpRLgIwKYWRkX2V4dHJhc5RoAmgGaD6GlFKUjBFnZW5lcmF0ZV9leHBfbmFtZZRoAmgGaEGGlFKUjA1sb3NzX2Rpc2NvdW50lEsBjAlkaWZmdXNpb26UjBhtb2RlbHMuR2F1c3NpYW5EaWZmdXNpb26UjAtyZWFkX2NvbmZpZ5RoAmgGaEeGlFKUjAhzYXZlcGF0aJSMM2xvZ3Mvd2Fsa2VyMmQtbWVkaXVtLXYyL2RpZmZ1c2lvbi9kZWZhdWx0c19IMTI4X1QyMJSMB25fc2F2ZXOUSwWMCm5vcm1hbGl6ZXKUjBJHYXVzc2lhbk5vcm1hbGl6ZXKUjAdkYXRhc2V0lIwSd2Fsa2VyMmQtbWVkaXVtLXYylIwNY2xpcF9kZW5vaXNlZJSJjA1zYXZlX3BhcmFsbGVslImMCWRpbV9tdWx0c5QoSwFLAksESwh0lIwZZ3JhZGllbnRfYWNjdW11bGF0ZV9ldmVyeZRLAowNbl90cmFpbl9zdGVwc5RHQS6EgAAAAACMBmNvbmZpZ5SMEWNvbmZpZy5sb2NvbW90aW9ulIwJYXR0ZW50aW9ulIl1Ymg+hpRSlC4="
+     },
+     "attention": false,
+     "batch_size": 32,
+     "bucket": null,
+     "clip_denoised": false,
+-    "commit": "7ea422860cc0106e5ca5949d980f04b799d5462c main",
++    "commit": "0a6febed3cf5922944958303b1662320a73a8aa5 yankai",
+     "config": "config.locomotion",
+     "dataset": "walker2d-medium-v2",
+     "device": "cuda",
+@@ -27,18 +27,18 @@
+     "eval_fstrings": {
+         "_string": "<bound method Parser.eval_fstrings of Parser(prog='train.py', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)>",
+         "_type": "python_object (type = method)",
+-        "_value": "gASVqwQAAAAAAACMCGJ1aWx0aW5zlIwHZ2V0YXR0cpSTlIwIX19tYWluX1+UjAZQYXJzZXKUk5QpgZR9lCiMB2xvZ2Jhc2WUjARsb2dzlIwLdXNlX3BhZGRpbmeUiIwJc2F2ZV9mcmVxlE0gTowLc2FtcGxlX2ZyZXGUTSBOjAhyZW5kZXJlcpSMFHV0aWxzLk11Sm9Db1JlbmRlcmVylIwNbl90cmFpbl9zdGVwc5RHQS6EgAAAAACMGWdyYWRpZW50X2FjY3VtdWxhdGVfZXZlcnmUSwKMBmJ1Y2tldJROjAlhdHRlbnRpb26UiYwGY29tbWl0lIwtN2VhNDIyODYwY2MwMTA2ZTVjYTU5NDlkOTgwZjA0Yjc5OWQ1NDYyYyBtYWlulIwJbG9zc190eXBllIwCbDKUjAZsb2FkZXKUjBhkYXRhc2V0cy5TZXF1ZW5jZURhdGFzZXSUjAxsb3NzX3dlaWdodHOUTowOcHJlcHJvY2Vzc19mbnOUXZSMD21heF9wYXRoX2xlbmd0aJRN6AOMC3JlYWRfY29uZmlnlGgCaAZoHYaUUpSMCmdldF9jb21taXSUaAJoBmgghpRSlIwFbWtkaXKUaAJoBmgjhpRSlIwJc2F2ZV9kaWZmlGgCaAZoJoaUUpSMBnByZWZpeJSMEmRpZmZ1c2lvbi9kZWZhdWx0c5SMB2hvcml6b26US4CMCmJhdGNoX3NpemWUSyCMB25fc2F2ZXOUSwWMDWxlYXJuaW5nX3JhdGWURz8qNuLrHEMtjAlkaWZmdXNpb26UjBhtb2RlbHMuR2F1c3NpYW5EaWZmdXNpb26UjApub3JtYWxpemVylIwSR2F1c3NpYW5Ob3JtYWxpemVylIwRbl9zdGVwc19wZXJfZXBvY2iUTRAnjA1sb3NzX2Rpc2NvdW50lEsBjAphZGRfZXh0cmFzlGgCaAZoNYaUUpSMDWNsaXBfZGVub2lzZWSUiYwLbl9yZWZlcmVuY2WUSwiMBmRldmljZZSMBGN1ZGGUjAllbWFfZGVjYXmURz/v1wo9cKPXjAxzZXRfbG9hZGJhc2WUaAJoBmg9hpRSlIwPcHJlZGljdF9lcHNpbG9ulImMBW1vZGVslIwTbW9kZWxzLlRlbXBvcmFsVW5ldJSMB2RhdGFzZXSUjBJ3YWxrZXIyZC1tZWRpdW0tdjKUjA1ldmFsX2ZzdHJpbmdzlGgCaAZoRYaUUpSMEW5fZGlmZnVzaW9uX3N0ZXBzlEsUjAhleHBfbmFtZZSMG2RpZmZ1c2lvbi9kZWZhdWx0c19IMTI4X1QyMJSMDWFjdGlvbl93ZWlnaHSUSwqMBHNlZWSUTowIc2F2ZXBhdGiUjDNsb2dzL3dhbGtlcjJkLW1lZGl1bS12Mi9kaWZmdXNpb24vZGVmYXVsdHNfSDEyOF9UMjCUjAZjb25maWeUjBFjb25maWcubG9jb21vdGlvbpSMCWRpbV9tdWx0c5QoSwFLAksESwh0lIwIc2V0X3NlZWSUaAJoBmhThpRSlIwNc2F2ZV9wYXJhbGxlbJSJjBFnZW5lcmF0ZV9leHBfbmFtZZRoAmgGaFeGlFKUdWJoRYaUUpQu"
++        "_value": "gASVrQQAAAAAAACMCGJ1aWx0aW5zlIwHZ2V0YXR0cpSTlIwIX19tYWluX1+UjAZQYXJzZXKUk5QpgZR9lCiMCGV4cF9uYW1llIwbZGlmZnVzaW9uL2RlZmF1bHRzX0gxMjhfVDIwlIwJbG9zc190eXBllIwCbDKUjAZkZXZpY2WUjARjdWRhlIwMc2V0X2xvYWRiYXNllGgCaAZoDoaUUpSMCXNhdmVfZGlmZpRoAmgGaBGGlFKUjAlzYXZlX2ZyZXGUTSBOjAxsb3NzX3dlaWdodHOUTowGY29tbWl0lIwvMGE2ZmViZWQzY2Y1OTIyOTQ0OTU4MzAzYjE2NjIzMjBhNzNhOGFhNSB5YW5rYWmUjA9wcmVkaWN0X2Vwc2lsb26UiYwOcHJlcHJvY2Vzc19mbnOUXZSMBmxvYWRlcpSMGGRhdGFzZXRzLlNlcXVlbmNlRGF0YXNldJSMBW1rZGlylGgCaAZoHYaUUpSMCHJlbmRlcmVylIwUdXRpbHMuTXVKb0NvUmVuZGVyZXKUjBFuX3N0ZXBzX3Blcl9lcG9jaJRNECeMDWFjdGlvbl93ZWlnaHSUSwqMBmJ1Y2tldJROjAtuX3JlZmVyZW5jZZRLCIwFbW9kZWyUjBNtb2RlbHMuVGVtcG9yYWxVbmV0lIwHbG9nYmFzZZSMBGxvZ3OUjBFuX2RpZmZ1c2lvbl9zdGVwc5RLFIwLdXNlX3BhZGRpbmeUiIwKYmF0Y2hfc2l6ZZRLIIwIc2V0X3NlZWSUaAJoBmgthpRSlIwLc2FtcGxlX2ZyZXGUTSBOjAZwcmVmaXiUjBJkaWZmdXNpb24vZGVmYXVsdHOUjA1ldmFsX2ZzdHJpbmdzlGgCaAZoM4aUUpSMDWxlYXJuaW5nX3JhdGWURz8qNuLrHEMtjARzZWVklE6MCmdldF9jb21taXSUaAJoBmg4hpRSlIwPbWF4X3BhdGhfbGVuZ3RolE3oA4wJZW1hX2RlY2F5lEc/79cKPXCj14wHaG9yaXpvbpRLgIwKYWRkX2V4dHJhc5RoAmgGaD6GlFKUjBFnZW5lcmF0ZV9leHBfbmFtZZRoAmgGaEGGlFKUjA1sb3NzX2Rpc2NvdW50lEsBjAlkaWZmdXNpb26UjBhtb2RlbHMuR2F1c3NpYW5EaWZmdXNpb26UjAtyZWFkX2NvbmZpZ5RoAmgGaEeGlFKUjAhzYXZlcGF0aJSMM2xvZ3Mvd2Fsa2VyMmQtbWVkaXVtLXYyL2RpZmZ1c2lvbi9kZWZhdWx0c19IMTI4X1QyMJSMB25fc2F2ZXOUSwWMCm5vcm1hbGl6ZXKUjBJHYXVzc2lhbk5vcm1hbGl6ZXKUjAdkYXRhc2V0lIwSd2Fsa2VyMmQtbWVkaXVtLXYylIwNY2xpcF9kZW5vaXNlZJSJjA1zYXZlX3BhcmFsbGVslImMCWRpbV9tdWx0c5QoSwFLAksESwh0lIwZZ3JhZGllbnRfYWNjdW11bGF0ZV9ldmVyeZRLAowNbl90cmFpbl9zdGVwc5RHQS6EgAAAAACMBmNvbmZpZ5SMEWNvbmZpZy5sb2NvbW90aW9ulIwJYXR0ZW50aW9ulIl1YmgzhpRSlC4="
+     },
+     "exp_name": "diffusion/defaults_H128_T20",
+     "generate_exp_name": {
+         "_string": "<bound method Parser.generate_exp_name of Parser(prog='train.py', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)>",
+         "_type": "python_object (type = method)",
+-        "_value": "gASVqwQAAAAAAACMCGJ1aWx0aW5zlIwHZ2V0YXR0cpSTlIwIX19tYWluX1+UjAZQYXJzZXKUk5QpgZR9lCiMB2xvZ2Jhc2WUjARsb2dzlIwLdXNlX3BhZGRpbmeUiIwJc2F2ZV9mcmVxlE0gTowLc2FtcGxlX2ZyZXGUTSBOjAhyZW5kZXJlcpSMFHV0aWxzLk11Sm9Db1JlbmRlcmVylIwNbl90cmFpbl9zdGVwc5RHQS6EgAAAAACMGWdyYWRpZW50X2FjY3VtdWxhdGVfZXZlcnmUSwKMBmJ1Y2tldJROjAlhdHRlbnRpb26UiYwGY29tbWl0lIwtN2VhNDIyODYwY2MwMTA2ZTVjYTU5NDlkOTgwZjA0Yjc5OWQ1NDYyYyBtYWlulIwJbG9zc190eXBllIwCbDKUjAZsb2FkZXKUjBhkYXRhc2V0cy5TZXF1ZW5jZURhdGFzZXSUjAxsb3NzX3dlaWdodHOUTowOcHJlcHJvY2Vzc19mbnOUXZSMD21heF9wYXRoX2xlbmd0aJRN6AOMC3JlYWRfY29uZmlnlGgCaAZoHYaUUpSMCmdldF9jb21taXSUaAJoBmgghpRSlIwFbWtkaXKUaAJoBmgjhpRSlIwJc2F2ZV9kaWZmlGgCaAZoJoaUUpSMBnByZWZpeJSMEmRpZmZ1c2lvbi9kZWZhdWx0c5SMB2hvcml6b26US4CMCmJhdGNoX3NpemWUSyCMB25fc2F2ZXOUSwWMDWxlYXJuaW5nX3JhdGWURz8qNuLrHEMtjAlkaWZmdXNpb26UjBhtb2RlbHMuR2F1c3NpYW5EaWZmdXNpb26UjApub3JtYWxpemVylIwSR2F1c3NpYW5Ob3JtYWxpemVylIwRbl9zdGVwc19wZXJfZXBvY2iUTRAnjA1sb3NzX2Rpc2NvdW50lEsBjAphZGRfZXh0cmFzlGgCaAZoNYaUUpSMDWNsaXBfZGVub2lzZWSUiYwLbl9yZWZlcmVuY2WUSwiMBmRldmljZZSMBGN1ZGGUjAllbWFfZGVjYXmURz/v1wo9cKPXjAxzZXRfbG9hZGJhc2WUaAJoBmg9hpRSlIwPcHJlZGljdF9lcHNpbG9ulImMBW1vZGVslIwTbW9kZWxzLlRlbXBvcmFsVW5ldJSMB2RhdGFzZXSUjBJ3YWxrZXIyZC1tZWRpdW0tdjKUjA1ldmFsX2ZzdHJpbmdzlGgCaAZoRYaUUpSMEW5fZGlmZnVzaW9uX3N0ZXBzlEsUjAhleHBfbmFtZZSMG2RpZmZ1c2lvbi9kZWZhdWx0c19IMTI4X1QyMJSMDWFjdGlvbl93ZWlnaHSUSwqMBHNlZWSUTowIc2F2ZXBhdGiUjDNsb2dzL3dhbGtlcjJkLW1lZGl1bS12Mi9kaWZmdXNpb24vZGVmYXVsdHNfSDEyOF9UMjCUjAZjb25maWeUjBFjb25maWcubG9jb21vdGlvbpSMCWRpbV9tdWx0c5QoSwFLAksESwh0lIwIc2V0X3NlZWSUaAJoBmhThpRSlIwNc2F2ZV9wYXJhbGxlbJSJjBFnZW5lcmF0ZV9leHBfbmFtZZRoAmgGaFeGlFKUdWJoV4aUUpQu"
++        "_value": "gASVrQQAAAAAAACMCGJ1aWx0aW5zlIwHZ2V0YXR0cpSTlIwIX19tYWluX1+UjAZQYXJzZXKUk5QpgZR9lCiMCGV4cF9uYW1llIwbZGlmZnVzaW9uL2RlZmF1bHRzX0gxMjhfVDIwlIwJbG9zc190eXBllIwCbDKUjAZkZXZpY2WUjARjdWRhlIwMc2V0X2xvYWRiYXNllGgCaAZoDoaUUpSMCXNhdmVfZGlmZpRoAmgGaBGGlFKUjAlzYXZlX2ZyZXGUTSBOjAxsb3NzX3dlaWdodHOUTowGY29tbWl0lIwvMGE2ZmViZWQzY2Y1OTIyOTQ0OTU4MzAzYjE2NjIzMjBhNzNhOGFhNSB5YW5rYWmUjA9wcmVkaWN0X2Vwc2lsb26UiYwOcHJlcHJvY2Vzc19mbnOUXZSMBmxvYWRlcpSMGGRhdGFzZXRzLlNlcXVlbmNlRGF0YXNldJSMBW1rZGlylGgCaAZoHYaUUpSMCHJlbmRlcmVylIwUdXRpbHMuTXVKb0NvUmVuZGVyZXKUjBFuX3N0ZXBzX3Blcl9lcG9jaJRNECeMDWFjdGlvbl93ZWlnaHSUSwqMBmJ1Y2tldJROjAtuX3JlZmVyZW5jZZRLCIwFbW9kZWyUjBNtb2RlbHMuVGVtcG9yYWxVbmV0lIwHbG9nYmFzZZSMBGxvZ3OUjBFuX2RpZmZ1c2lvbl9zdGVwc5RLFIwLdXNlX3BhZGRpbmeUiIwKYmF0Y2hfc2l6ZZRLIIwIc2V0X3NlZWSUaAJoBmgthpRSlIwLc2FtcGxlX2ZyZXGUTSBOjAZwcmVmaXiUjBJkaWZmdXNpb24vZGVmYXVsdHOUjA1ldmFsX2ZzdHJpbmdzlGgCaAZoM4aUUpSMDWxlYXJuaW5nX3JhdGWURz8qNuLrHEMtjARzZWVklE6MCmdldF9jb21taXSUaAJoBmg4hpRSlIwPbWF4X3BhdGhfbGVuZ3RolE3oA4wJZW1hX2RlY2F5lEc/79cKPXCj14wHaG9yaXpvbpRLgIwKYWRkX2V4dHJhc5RoAmgGaD6GlFKUjBFnZW5lcmF0ZV9leHBfbmFtZZRoAmgGaEGGlFKUjA1sb3NzX2Rpc2NvdW50lEsBjAlkaWZmdXNpb26UjBhtb2RlbHMuR2F1c3NpYW5EaWZmdXNpb26UjAtyZWFkX2NvbmZpZ5RoAmgGaEeGlFKUjAhzYXZlcGF0aJSMM2xvZ3Mvd2Fsa2VyMmQtbWVkaXVtLXYyL2RpZmZ1c2lvbi9kZWZhdWx0c19IMTI4X1QyMJSMB25fc2F2ZXOUSwWMCm5vcm1hbGl6ZXKUjBJHYXVzc2lhbk5vcm1hbGl6ZXKUjAdkYXRhc2V0lIwSd2Fsa2VyMmQtbWVkaXVtLXYylIwNY2xpcF9kZW5vaXNlZJSJjA1zYXZlX3BhcmFsbGVslImMCWRpbV9tdWx0c5QoSwFLAksESwh0lIwZZ3JhZGllbnRfYWNjdW11bGF0ZV9ldmVyeZRLAowNbl90cmFpbl9zdGVwc5RHQS6EgAAAAACMBmNvbmZpZ5SMEWNvbmZpZy5sb2NvbW90aW9ulIwJYXR0ZW50aW9ulIl1YmhBhpRSlC4="
+     },
+     "get_commit": {
+         "_string": "<bound method Parser.get_commit of Parser(prog='train.py', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)>",
+         "_type": "python_object (type = method)",
+-        "_value": "gASVqwQAAAAAAACMCGJ1aWx0aW5zlIwHZ2V0YXR0cpSTlIwIX19tYWluX1+UjAZQYXJzZXKUk5QpgZR9lCiMB2xvZ2Jhc2WUjARsb2dzlIwLdXNlX3BhZGRpbmeUiIwJc2F2ZV9mcmVxlE0gTowLc2FtcGxlX2ZyZXGUTSBOjAhyZW5kZXJlcpSMFHV0aWxzLk11Sm9Db1JlbmRlcmVylIwNbl90cmFpbl9zdGVwc5RHQS6EgAAAAACMGWdyYWRpZW50X2FjY3VtdWxhdGVfZXZlcnmUSwKMBmJ1Y2tldJROjAlhdHRlbnRpb26UiYwGY29tbWl0lIwtN2VhNDIyODYwY2MwMTA2ZTVjYTU5NDlkOTgwZjA0Yjc5OWQ1NDYyYyBtYWlulIwJbG9zc190eXBllIwCbDKUjAZsb2FkZXKUjBhkYXRhc2V0cy5TZXF1ZW5jZURhdGFzZXSUjAxsb3NzX3dlaWdodHOUTowOcHJlcHJvY2Vzc19mbnOUXZSMD21heF9wYXRoX2xlbmd0aJRN6AOMC3JlYWRfY29uZmlnlGgCaAZoHYaUUpSMCmdldF9jb21taXSUaAJoBmgghpRSlIwFbWtkaXKUaAJoBmgjhpRSlIwJc2F2ZV9kaWZmlGgCaAZoJoaUUpSMBnByZWZpeJSMEmRpZmZ1c2lvbi9kZWZhdWx0c5SMB2hvcml6b26US4CMCmJhdGNoX3NpemWUSyCMB25fc2F2ZXOUSwWMDWxlYXJuaW5nX3JhdGWURz8qNuLrHEMtjAlkaWZmdXNpb26UjBhtb2RlbHMuR2F1c3NpYW5EaWZmdXNpb26UjApub3JtYWxpemVylIwSR2F1c3NpYW5Ob3JtYWxpemVylIwRbl9zdGVwc19wZXJfZXBvY2iUTRAnjA1sb3NzX2Rpc2NvdW50lEsBjAphZGRfZXh0cmFzlGgCaAZoNYaUUpSMDWNsaXBfZGVub2lzZWSUiYwLbl9yZWZlcmVuY2WUSwiMBmRldmljZZSMBGN1ZGGUjAllbWFfZGVjYXmURz/v1wo9cKPXjAxzZXRfbG9hZGJhc2WUaAJoBmg9hpRSlIwPcHJlZGljdF9lcHNpbG9ulImMBW1vZGVslIwTbW9kZWxzLlRlbXBvcmFsVW5ldJSMB2RhdGFzZXSUjBJ3YWxrZXIyZC1tZWRpdW0tdjKUjA1ldmFsX2ZzdHJpbmdzlGgCaAZoRYaUUpSMEW5fZGlmZnVzaW9uX3N0ZXBzlEsUjAhleHBfbmFtZZSMG2RpZmZ1c2lvbi9kZWZhdWx0c19IMTI4X1QyMJSMDWFjdGlvbl93ZWlnaHSUSwqMBHNlZWSUTowIc2F2ZXBhdGiUjDNsb2dzL3dhbGtlcjJkLW1lZGl1bS12Mi9kaWZmdXNpb24vZGVmYXVsdHNfSDEyOF9UMjCUjAZjb25maWeUjBFjb25maWcubG9jb21vdGlvbpSMCWRpbV9tdWx0c5QoSwFLAksESwh0lIwIc2V0X3NlZWSUaAJoBmhThpRSlIwNc2F2ZV9wYXJhbGxlbJSJjBFnZW5lcmF0ZV9leHBfbmFtZZRoAmgGaFeGlFKUdWJoIIaUUpQu"
++        "_value": "gASVrQQAAAAAAACMCGJ1aWx0aW5zlIwHZ2V0YXR0cpSTlIwIX19tYWluX1+UjAZQYXJzZXKUk5QpgZR9lCiMCGV4cF9uYW1llIwbZGlmZnVzaW9uL2RlZmF1bHRzX0gxMjhfVDIwlIwJbG9zc190eXBllIwCbDKUjAZkZXZpY2WUjARjdWRhlIwMc2V0X2xvYWRiYXNllGgCaAZoDoaUUpSMCXNhdmVfZGlmZpRoAmgGaBGGlFKUjAlzYXZlX2ZyZXGUTSBOjAxsb3NzX3dlaWdodHOUTowGY29tbWl0lIwvMGE2ZmViZWQzY2Y1OTIyOTQ0OTU4MzAzYjE2NjIzMjBhNzNhOGFhNSB5YW5rYWmUjA9wcmVkaWN0X2Vwc2lsb26UiYwOcHJlcHJvY2Vzc19mbnOUXZSMBmxvYWRlcpSMGGRhdGFzZXRzLlNlcXVlbmNlRGF0YXNldJSMBW1rZGlylGgCaAZoHYaUUpSMCHJlbmRlcmVylIwUdXRpbHMuTXVKb0NvUmVuZGVyZXKUjBFuX3N0ZXBzX3Blcl9lcG9jaJRNECeMDWFjdGlvbl93ZWlnaHSUSwqMBmJ1Y2tldJROjAtuX3JlZmVyZW5jZZRLCIwFbW9kZWyUjBNtb2RlbHMuVGVtcG9yYWxVbmV0lIwHbG9nYmFzZZSMBGxvZ3OUjBFuX2RpZmZ1c2lvbl9zdGVwc5RLFIwLdXNlX3BhZGRpbmeUiIwKYmF0Y2hfc2l6ZZRLIIwIc2V0X3NlZWSUaAJoBmgthpRSlIwLc2FtcGxlX2ZyZXGUTSBOjAZwcmVmaXiUjBJkaWZmdXNpb24vZGVmYXVsdHOUjA1ldmFsX2ZzdHJpbmdzlGgCaAZoM4aUUpSMDWxlYXJuaW5nX3JhdGWURz8qNuLrHEMtjARzZWVklE6MCmdldF9jb21taXSUaAJoBmg4hpRSlIwPbWF4X3BhdGhfbGVuZ3RolE3oA4wJZW1hX2RlY2F5lEc/79cKPXCj14wHaG9yaXpvbpRLgIwKYWRkX2V4dHJhc5RoAmgGaD6GlFKUjBFnZW5lcmF0ZV9leHBfbmFtZZRoAmgGaEGGlFKUjA1sb3NzX2Rpc2NvdW50lEsBjAlkaWZmdXNpb26UjBhtb2RlbHMuR2F1c3NpYW5EaWZmdXNpb26UjAtyZWFkX2NvbmZpZ5RoAmgGaEeGlFKUjAhzYXZlcGF0aJSMM2xvZ3Mvd2Fsa2VyMmQtbWVkaXVtLXYyL2RpZmZ1c2lvbi9kZWZhdWx0c19IMTI4X1QyMJSMB25fc2F2ZXOUSwWMCm5vcm1hbGl6ZXKUjBJHYXVzc2lhbk5vcm1hbGl6ZXKUjAdkYXRhc2V0lIwSd2Fsa2VyMmQtbWVkaXVtLXYylIwNY2xpcF9kZW5vaXNlZJSJjA1zYXZlX3BhcmFsbGVslImMCWRpbV9tdWx0c5QoSwFLAksESwh0lIwZZ3JhZGllbnRfYWNjdW11bGF0ZV9ldmVyeZRLAowNbl90cmFpbl9zdGVwc5RHQS6EgAAAAACMBmNvbmZpZ5SMEWNvbmZpZy5sb2NvbW90aW9ulIwJYXR0ZW50aW9ulIl1Ymg4hpRSlC4="
+     },
+     "gradient_accumulate_every": 2,
+     "horizon": 128,
+@@ -52,7 +52,7 @@
+     "mkdir": {
+         "_string": "<bound method Parser.mkdir of Parser(prog='train.py', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)>",
+         "_type": "python_object (type = method)",
+-        "_value": "gASVqwQAAAAAAACMCGJ1aWx0aW5zlIwHZ2V0YXR0cpSTlIwIX19tYWluX1+UjAZQYXJzZXKUk5QpgZR9lCiMB2xvZ2Jhc2WUjARsb2dzlIwLdXNlX3BhZGRpbmeUiIwJc2F2ZV9mcmVxlE0gTowLc2FtcGxlX2ZyZXGUTSBOjAhyZW5kZXJlcpSMFHV0aWxzLk11Sm9Db1JlbmRlcmVylIwNbl90cmFpbl9zdGVwc5RHQS6EgAAAAACMGWdyYWRpZW50X2FjY3VtdWxhdGVfZXZlcnmUSwKMBmJ1Y2tldJROjAlhdHRlbnRpb26UiYwGY29tbWl0lIwtN2VhNDIyODYwY2MwMTA2ZTVjYTU5NDlkOTgwZjA0Yjc5OWQ1NDYyYyBtYWlulIwJbG9zc190eXBllIwCbDKUjAZsb2FkZXKUjBhkYXRhc2V0cy5TZXF1ZW5jZURhdGFzZXSUjAxsb3NzX3dlaWdodHOUTowOcHJlcHJvY2Vzc19mbnOUXZSMD21heF9wYXRoX2xlbmd0aJRN6AOMC3JlYWRfY29uZmlnlGgCaAZoHYaUUpSMCmdldF9jb21taXSUaAJoBmgghpRSlIwFbWtkaXKUaAJoBmgjhpRSlIwJc2F2ZV9kaWZmlGgCaAZoJoaUUpSMBnByZWZpeJSMEmRpZmZ1c2lvbi9kZWZhdWx0c5SMB2hvcml6b26US4CMCmJhdGNoX3NpemWUSyCMB25fc2F2ZXOUSwWMDWxlYXJuaW5nX3JhdGWURz8qNuLrHEMtjAlkaWZmdXNpb26UjBhtb2RlbHMuR2F1c3NpYW5EaWZmdXNpb26UjApub3JtYWxpemVylIwSR2F1c3NpYW5Ob3JtYWxpemVylIwRbl9zdGVwc19wZXJfZXBvY2iUTRAnjA1sb3NzX2Rpc2NvdW50lEsBjAphZGRfZXh0cmFzlGgCaAZoNYaUUpSMDWNsaXBfZGVub2lzZWSUiYwLbl9yZWZlcmVuY2WUSwiMBmRldmljZZSMBGN1ZGGUjAllbWFfZGVjYXmURz/v1wo9cKPXjAxzZXRfbG9hZGJhc2WUaAJoBmg9hpRSlIwPcHJlZGljdF9lcHNpbG9ulImMBW1vZGVslIwTbW9kZWxzLlRlbXBvcmFsVW5ldJSMB2RhdGFzZXSUjBJ3YWxrZXIyZC1tZWRpdW0tdjKUjA1ldmFsX2ZzdHJpbmdzlGgCaAZoRYaUUpSMEW5fZGlmZnVzaW9uX3N0ZXBzlEsUjAhleHBfbmFtZZSMG2RpZmZ1c2lvbi9kZWZhdWx0c19IMTI4X1QyMJSMDWFjdGlvbl93ZWlnaHSUSwqMBHNlZWSUTowIc2F2ZXBhdGiUjDNsb2dzL3dhbGtlcjJkLW1lZGl1bS12Mi9kaWZmdXNpb24vZGVmYXVsdHNfSDEyOF9UMjCUjAZjb25maWeUjBFjb25maWcubG9jb21vdGlvbpSMCWRpbV9tdWx0c5QoSwFLAksESwh0lIwIc2V0X3NlZWSUaAJoBmhThpRSlIwNc2F2ZV9wYXJhbGxlbJSJjBFnZW5lcmF0ZV9leHBfbmFtZZRoAmgGaFeGlFKUdWJoI4aUUpQu"
++        "_value": "gASVrQQAAAAAAACMCGJ1aWx0aW5zlIwHZ2V0YXR0cpSTlIwIX19tYWluX1+UjAZQYXJzZXKUk5QpgZR9lCiMCGV4cF9uYW1llIwbZGlmZnVzaW9uL2RlZmF1bHRzX0gxMjhfVDIwlIwJbG9zc190eXBllIwCbDKUjAZkZXZpY2WUjARjdWRhlIwMc2V0X2xvYWRiYXNllGgCaAZoDoaUUpSMCXNhdmVfZGlmZpRoAmgGaBGGlFKUjAlzYXZlX2ZyZXGUTSBOjAxsb3NzX3dlaWdodHOUTowGY29tbWl0lIwvMGE2ZmViZWQzY2Y1OTIyOTQ0OTU4MzAzYjE2NjIzMjBhNzNhOGFhNSB5YW5rYWmUjA9wcmVkaWN0X2Vwc2lsb26UiYwOcHJlcHJvY2Vzc19mbnOUXZSMBmxvYWRlcpSMGGRhdGFzZXRzLlNlcXVlbmNlRGF0YXNldJSMBW1rZGlylGgCaAZoHYaUUpSMCHJlbmRlcmVylIwUdXRpbHMuTXVKb0NvUmVuZGVyZXKUjBFuX3N0ZXBzX3Blcl9lcG9jaJRNECeMDWFjdGlvbl93ZWlnaHSUSwqMBmJ1Y2tldJROjAtuX3JlZmVyZW5jZZRLCIwFbW9kZWyUjBNtb2RlbHMuVGVtcG9yYWxVbmV0lIwHbG9nYmFzZZSMBGxvZ3OUjBFuX2RpZmZ1c2lvbl9zdGVwc5RLFIwLdXNlX3BhZGRpbmeUiIwKYmF0Y2hfc2l6ZZRLIIwIc2V0X3NlZWSUaAJoBmgthpRSlIwLc2FtcGxlX2ZyZXGUTSBOjAZwcmVmaXiUjBJkaWZmdXNpb24vZGVmYXVsdHOUjA1ldmFsX2ZzdHJpbmdzlGgCaAZoM4aUUpSMDWxlYXJuaW5nX3JhdGWURz8qNuLrHEMtjARzZWVklE6MCmdldF9jb21taXSUaAJoBmg4hpRSlIwPbWF4X3BhdGhfbGVuZ3RolE3oA4wJZW1hX2RlY2F5lEc/79cKPXCj14wHaG9yaXpvbpRLgIwKYWRkX2V4dHJhc5RoAmgGaD6GlFKUjBFnZW5lcmF0ZV9leHBfbmFtZZRoAmgGaEGGlFKUjA1sb3NzX2Rpc2NvdW50lEsBjAlkaWZmdXNpb26UjBhtb2RlbHMuR2F1c3NpYW5EaWZmdXNpb26UjAtyZWFkX2NvbmZpZ5RoAmgGaEeGlFKUjAhzYXZlcGF0aJSMM2xvZ3Mvd2Fsa2VyMmQtbWVkaXVtLXYyL2RpZmZ1c2lvbi9kZWZhdWx0c19IMTI4X1QyMJSMB25fc2F2ZXOUSwWMCm5vcm1hbGl6ZXKUjBJHYXVzc2lhbk5vcm1hbGl6ZXKUjAdkYXRhc2V0lIwSd2Fsa2VyMmQtbWVkaXVtLXYylIwNY2xpcF9kZW5vaXNlZJSJjA1zYXZlX3BhcmFsbGVslImMCWRpbV9tdWx0c5QoSwFLAksESwh0lIwZZ3JhZGllbnRfYWNjdW11bGF0ZV9ldmVyeZRLAowNbl90cmFpbl9zdGVwc5RHQS6EgAAAAACMBmNvbmZpZ5SMEWNvbmZpZy5sb2NvbW90aW9ulIwJYXR0ZW50aW9ulIl1YmgdhpRSlC4="
+     },
+     "model": "models.TemporalUnet",
+     "n_diffusion_steps": 20,
+@@ -67,21 +67,21 @@
+     "read_config": {
+         "_string": "<bound method Parser.read_config of Parser(prog='train.py', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)>",
+         "_type": "python_object (type = method)",
+-        "_value": "gASVqwQAAAAAAACMCGJ1aWx0aW5zlIwHZ2V0YXR0cpSTlIwIX19tYWluX1+UjAZQYXJzZXKUk5QpgZR9lCiMB2xvZ2Jhc2WUjARsb2dzlIwLdXNlX3BhZGRpbmeUiIwJc2F2ZV9mcmVxlE0gTowLc2FtcGxlX2ZyZXGUTSBOjAhyZW5kZXJlcpSMFHV0aWxzLk11Sm9Db1JlbmRlcmVylIwNbl90cmFpbl9zdGVwc5RHQS6EgAAAAACMGWdyYWRpZW50X2FjY3VtdWxhdGVfZXZlcnmUSwKMBmJ1Y2tldJROjAlhdHRlbnRpb26UiYwGY29tbWl0lIwtN2VhNDIyODYwY2MwMTA2ZTVjYTU5NDlkOTgwZjA0Yjc5OWQ1NDYyYyBtYWlulIwJbG9zc190eXBllIwCbDKUjAZsb2FkZXKUjBhkYXRhc2V0cy5TZXF1ZW5jZURhdGFzZXSUjAxsb3NzX3dlaWdodHOUTowOcHJlcHJvY2Vzc19mbnOUXZSMD21heF9wYXRoX2xlbmd0aJRN6AOMC3JlYWRfY29uZmlnlGgCaAZoHYaUUpSMCmdldF9jb21taXSUaAJoBmgghpRSlIwFbWtkaXKUaAJoBmgjhpRSlIwJc2F2ZV9kaWZmlGgCaAZoJoaUUpSMBnByZWZpeJSMEmRpZmZ1c2lvbi9kZWZhdWx0c5SMB2hvcml6b26US4CMCmJhdGNoX3NpemWUSyCMB25fc2F2ZXOUSwWMDWxlYXJuaW5nX3JhdGWURz8qNuLrHEMtjAlkaWZmdXNpb26UjBhtb2RlbHMuR2F1c3NpYW5EaWZmdXNpb26UjApub3JtYWxpemVylIwSR2F1c3NpYW5Ob3JtYWxpemVylIwRbl9zdGVwc19wZXJfZXBvY2iUTRAnjA1sb3NzX2Rpc2NvdW50lEsBjAphZGRfZXh0cmFzlGgCaAZoNYaUUpSMDWNsaXBfZGVub2lzZWSUiYwLbl9yZWZlcmVuY2WUSwiMBmRldmljZZSMBGN1ZGGUjAllbWFfZGVjYXmURz/v1wo9cKPXjAxzZXRfbG9hZGJhc2WUaAJoBmg9hpRSlIwPcHJlZGljdF9lcHNpbG9ulImMBW1vZGVslIwTbW9kZWxzLlRlbXBvcmFsVW5ldJSMB2RhdGFzZXSUjBJ3YWxrZXIyZC1tZWRpdW0tdjKUjA1ldmFsX2ZzdHJpbmdzlGgCaAZoRYaUUpSMEW5fZGlmZnVzaW9uX3N0ZXBzlEsUjAhleHBfbmFtZZSMG2RpZmZ1c2lvbi9kZWZhdWx0c19IMTI4X1QyMJSMDWFjdGlvbl93ZWlnaHSUSwqMBHNlZWSUTowIc2F2ZXBhdGiUjDNsb2dzL3dhbGtlcjJkLW1lZGl1bS12Mi9kaWZmdXNpb24vZGVmYXVsdHNfSDEyOF9UMjCUjAZjb25maWeUjBFjb25maWcubG9jb21vdGlvbpSMCWRpbV9tdWx0c5QoSwFLAksESwh0lIwIc2V0X3NlZWSUaAJoBmhThpRSlIwNc2F2ZV9wYXJhbGxlbJSJjBFnZW5lcmF0ZV9leHBfbmFtZZRoAmgGaFeGlFKUdWJoHYaUUpQu"
++        "_value": "gASVrQQAAAAAAACMCGJ1aWx0aW5zlIwHZ2V0YXR0cpSTlIwIX19tYWluX1+UjAZQYXJzZXKUk5QpgZR9lCiMCGV4cF9uYW1llIwbZGlmZnVzaW9uL2RlZmF1bHRzX0gxMjhfVDIwlIwJbG9zc190eXBllIwCbDKUjAZkZXZpY2WUjARjdWRhlIwMc2V0X2xvYWRiYXNllGgCaAZoDoaUUpSMCXNhdmVfZGlmZpRoAmgGaBGGlFKUjAlzYXZlX2ZyZXGUTSBOjAxsb3NzX3dlaWdodHOUTowGY29tbWl0lIwvMGE2ZmViZWQzY2Y1OTIyOTQ0OTU4MzAzYjE2NjIzMjBhNzNhOGFhNSB5YW5rYWmUjA9wcmVkaWN0X2Vwc2lsb26UiYwOcHJlcHJvY2Vzc19mbnOUXZSMBmxvYWRlcpSMGGRhdGFzZXRzLlNlcXVlbmNlRGF0YXNldJSMBW1rZGlylGgCaAZoHYaUUpSMCHJlbmRlcmVylIwUdXRpbHMuTXVKb0NvUmVuZGVyZXKUjBFuX3N0ZXBzX3Blcl9lcG9jaJRNECeMDWFjdGlvbl93ZWlnaHSUSwqMBmJ1Y2tldJROjAtuX3JlZmVyZW5jZZRLCIwFbW9kZWyUjBNtb2RlbHMuVGVtcG9yYWxVbmV0lIwHbG9nYmFzZZSMBGxvZ3OUjBFuX2RpZmZ1c2lvbl9zdGVwc5RLFIwLdXNlX3BhZGRpbmeUiIwKYmF0Y2hfc2l6ZZRLIIwIc2V0X3NlZWSUaAJoBmgthpRSlIwLc2FtcGxlX2ZyZXGUTSBOjAZwcmVmaXiUjBJkaWZmdXNpb24vZGVmYXVsdHOUjA1ldmFsX2ZzdHJpbmdzlGgCaAZoM4aUUpSMDWxlYXJuaW5nX3JhdGWURz8qNuLrHEMtjARzZWVklE6MCmdldF9jb21taXSUaAJoBmg4hpRSlIwPbWF4X3BhdGhfbGVuZ3RolE3oA4wJZW1hX2RlY2F5lEc/79cKPXCj14wHaG9yaXpvbpRLgIwKYWRkX2V4dHJhc5RoAmgGaD6GlFKUjBFnZW5lcmF0ZV9leHBfbmFtZZRoAmgGaEGGlFKUjA1sb3NzX2Rpc2NvdW50lEsBjAlkaWZmdXNpb26UjBhtb2RlbHMuR2F1c3NpYW5EaWZmdXNpb26UjAtyZWFkX2NvbmZpZ5RoAmgGaEeGlFKUjAhzYXZlcGF0aJSMM2xvZ3Mvd2Fsa2VyMmQtbWVkaXVtLXYyL2RpZmZ1c2lvbi9kZWZhdWx0c19IMTI4X1QyMJSMB25fc2F2ZXOUSwWMCm5vcm1hbGl6ZXKUjBJHYXVzc2lhbk5vcm1hbGl6ZXKUjAdkYXRhc2V0lIwSd2Fsa2VyMmQtbWVkaXVtLXYylIwNY2xpcF9kZW5vaXNlZJSJjA1zYXZlX3BhcmFsbGVslImMCWRpbV9tdWx0c5QoSwFLAksESwh0lIwZZ3JhZGllbnRfYWNjdW11bGF0ZV9ldmVyeZRLAowNbl90cmFpbl9zdGVwc5RHQS6EgAAAAACMBmNvbmZpZ5SMEWNvbmZpZy5sb2NvbW90aW9ulIwJYXR0ZW50aW9ulIl1YmhHhpRSlC4="
+     },
+     "renderer": "utils.MuJoCoRenderer",
+     "reproducibility": {
+         "command_line": "python scripts/train.py --dataset walker2d-medium-v2",
+         "git_has_uncommitted_changes": true,
+-        "git_root": "/home/gulio/Desktop/Courses/983/project/others/diffuser",
+-        "git_url": "https://github.com/jannerm/diffuser/tree/7ea422860cc0106e5ca5949d980f04b799d5462c",
+-        "time": "Mon Dec  2 17:16:10 2024"
++        "git_root": "/home/gulio/Desktop/Courses/983/project/diffuser-IMLE",
++        "git_url": "https://github.com/kir-/diffuser-IMLE/tree/0a6febed3cf5922944958303b1662320a73a8aa5",
++        "time": "Thu Dec  5 10:42:37 2024"
+     },
+     "sample_freq": 20000,
+     "save_diff": {
+         "_string": "<bound method Parser.save_diff of Parser(prog='train.py', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)>",
+         "_type": "python_object (type = method)",
+-        "_value": "gASVqwQAAAAAAACMCGJ1aWx0aW5zlIwHZ2V0YXR0cpSTlIwIX19tYWluX1+UjAZQYXJzZXKUk5QpgZR9lCiMB2xvZ2Jhc2WUjARsb2dzlIwLdXNlX3BhZGRpbmeUiIwJc2F2ZV9mcmVxlE0gTowLc2FtcGxlX2ZyZXGUTSBOjAhyZW5kZXJlcpSMFHV0aWxzLk11Sm9Db1JlbmRlcmVylIwNbl90cmFpbl9zdGVwc5RHQS6EgAAAAACMGWdyYWRpZW50X2FjY3VtdWxhdGVfZXZlcnmUSwKMBmJ1Y2tldJROjAlhdHRlbnRpb26UiYwGY29tbWl0lIwtN2VhNDIyODYwY2MwMTA2ZTVjYTU5NDlkOTgwZjA0Yjc5OWQ1NDYyYyBtYWlulIwJbG9zc190eXBllIwCbDKUjAZsb2FkZXKUjBhkYXRhc2V0cy5TZXF1ZW5jZURhdGFzZXSUjAxsb3NzX3dlaWdodHOUTowOcHJlcHJvY2Vzc19mbnOUXZSMD21heF9wYXRoX2xlbmd0aJRN6AOMC3JlYWRfY29uZmlnlGgCaAZoHYaUUpSMCmdldF9jb21taXSUaAJoBmgghpRSlIwFbWtkaXKUaAJoBmgjhpRSlIwJc2F2ZV9kaWZmlGgCaAZoJoaUUpSMBnByZWZpeJSMEmRpZmZ1c2lvbi9kZWZhdWx0c5SMB2hvcml6b26US4CMCmJhdGNoX3NpemWUSyCMB25fc2F2ZXOUSwWMDWxlYXJuaW5nX3JhdGWURz8qNuLrHEMtjAlkaWZmdXNpb26UjBhtb2RlbHMuR2F1c3NpYW5EaWZmdXNpb26UjApub3JtYWxpemVylIwSR2F1c3NpYW5Ob3JtYWxpemVylIwRbl9zdGVwc19wZXJfZXBvY2iUTRAnjA1sb3NzX2Rpc2NvdW50lEsBjAphZGRfZXh0cmFzlGgCaAZoNYaUUpSMDWNsaXBfZGVub2lzZWSUiYwLbl9yZWZlcmVuY2WUSwiMBmRldmljZZSMBGN1ZGGUjAllbWFfZGVjYXmURz/v1wo9cKPXjAxzZXRfbG9hZGJhc2WUaAJoBmg9hpRSlIwPcHJlZGljdF9lcHNpbG9ulImMBW1vZGVslIwTbW9kZWxzLlRlbXBvcmFsVW5ldJSMB2RhdGFzZXSUjBJ3YWxrZXIyZC1tZWRpdW0tdjKUjA1ldmFsX2ZzdHJpbmdzlGgCaAZoRYaUUpSMEW5fZGlmZnVzaW9uX3N0ZXBzlEsUjAhleHBfbmFtZZSMG2RpZmZ1c2lvbi9kZWZhdWx0c19IMTI4X1QyMJSMDWFjdGlvbl93ZWlnaHSUSwqMBHNlZWSUTowIc2F2ZXBhdGiUjDNsb2dzL3dhbGtlcjJkLW1lZGl1bS12Mi9kaWZmdXNpb24vZGVmYXVsdHNfSDEyOF9UMjCUjAZjb25maWeUjBFjb25maWcubG9jb21vdGlvbpSMCWRpbV9tdWx0c5QoSwFLAksESwh0lIwIc2V0X3NlZWSUaAJoBmhThpRSlIwNc2F2ZV9wYXJhbGxlbJSJjBFnZW5lcmF0ZV9leHBfbmFtZZRoAmgGaFeGlFKUdWJoJoaUUpQu"
++        "_value": "gASVrQQAAAAAAACMCGJ1aWx0aW5zlIwHZ2V0YXR0cpSTlIwIX19tYWluX1+UjAZQYXJzZXKUk5QpgZR9lCiMCGV4cF9uYW1llIwbZGlmZnVzaW9uL2RlZmF1bHRzX0gxMjhfVDIwlIwJbG9zc190eXBllIwCbDKUjAZkZXZpY2WUjARjdWRhlIwMc2V0X2xvYWRiYXNllGgCaAZoDoaUUpSMCXNhdmVfZGlmZpRoAmgGaBGGlFKUjAlzYXZlX2ZyZXGUTSBOjAxsb3NzX3dlaWdodHOUTowGY29tbWl0lIwvMGE2ZmViZWQzY2Y1OTIyOTQ0OTU4MzAzYjE2NjIzMjBhNzNhOGFhNSB5YW5rYWmUjA9wcmVkaWN0X2Vwc2lsb26UiYwOcHJlcHJvY2Vzc19mbnOUXZSMBmxvYWRlcpSMGGRhdGFzZXRzLlNlcXVlbmNlRGF0YXNldJSMBW1rZGlylGgCaAZoHYaUUpSMCHJlbmRlcmVylIwUdXRpbHMuTXVKb0NvUmVuZGVyZXKUjBFuX3N0ZXBzX3Blcl9lcG9jaJRNECeMDWFjdGlvbl93ZWlnaHSUSwqMBmJ1Y2tldJROjAtuX3JlZmVyZW5jZZRLCIwFbW9kZWyUjBNtb2RlbHMuVGVtcG9yYWxVbmV0lIwHbG9nYmFzZZSMBGxvZ3OUjBFuX2RpZmZ1c2lvbl9zdGVwc5RLFIwLdXNlX3BhZGRpbmeUiIwKYmF0Y2hfc2l6ZZRLIIwIc2V0X3NlZWSUaAJoBmgthpRSlIwLc2FtcGxlX2ZyZXGUTSBOjAZwcmVmaXiUjBJkaWZmdXNpb24vZGVmYXVsdHOUjA1ldmFsX2ZzdHJpbmdzlGgCaAZoM4aUUpSMDWxlYXJuaW5nX3JhdGWURz8qNuLrHEMtjARzZWVklE6MCmdldF9jb21taXSUaAJoBmg4hpRSlIwPbWF4X3BhdGhfbGVuZ3RolE3oA4wJZW1hX2RlY2F5lEc/79cKPXCj14wHaG9yaXpvbpRLgIwKYWRkX2V4dHJhc5RoAmgGaD6GlFKUjBFnZW5lcmF0ZV9leHBfbmFtZZRoAmgGaEGGlFKUjA1sb3NzX2Rpc2NvdW50lEsBjAlkaWZmdXNpb26UjBhtb2RlbHMuR2F1c3NpYW5EaWZmdXNpb26UjAtyZWFkX2NvbmZpZ5RoAmgGaEeGlFKUjAhzYXZlcGF0aJSMM2xvZ3Mvd2Fsa2VyMmQtbWVkaXVtLXYyL2RpZmZ1c2lvbi9kZWZhdWx0c19IMTI4X1QyMJSMB25fc2F2ZXOUSwWMCm5vcm1hbGl6ZXKUjBJHYXVzc2lhbk5vcm1hbGl6ZXKUjAdkYXRhc2V0lIwSd2Fsa2VyMmQtbWVkaXVtLXYylIwNY2xpcF9kZW5vaXNlZJSJjA1zYXZlX3BhcmFsbGVslImMCWRpbV9tdWx0c5QoSwFLAksESwh0lIwZZ3JhZGllbnRfYWNjdW11bGF0ZV9ldmVyeZRLAowNbl90cmFpbl9zdGVwc5RHQS6EgAAAAACMBmNvbmZpZ5SMEWNvbmZpZy5sb2NvbW90aW9ulIwJYXR0ZW50aW9ulIl1YmgRhpRSlC4="
+     },
+     "save_freq": 20000,
+     "save_parallel": false,
+@@ -90,12 +90,12 @@
+     "set_loadbase": {
+         "_string": "<bound method Parser.set_loadbase of Parser(prog='train.py', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)>",
+         "_type": "python_object (type = method)",
+-        "_value": "gASVqwQAAAAAAACMCGJ1aWx0aW5zlIwHZ2V0YXR0cpSTlIwIX19tYWluX1+UjAZQYXJzZXKUk5QpgZR9lCiMB2xvZ2Jhc2WUjARsb2dzlIwLdXNlX3BhZGRpbmeUiIwJc2F2ZV9mcmVxlE0gTowLc2FtcGxlX2ZyZXGUTSBOjAhyZW5kZXJlcpSMFHV0aWxzLk11Sm9Db1JlbmRlcmVylIwNbl90cmFpbl9zdGVwc5RHQS6EgAAAAACMGWdyYWRpZW50X2FjY3VtdWxhdGVfZXZlcnmUSwKMBmJ1Y2tldJROjAlhdHRlbnRpb26UiYwGY29tbWl0lIwtN2VhNDIyODYwY2MwMTA2ZTVjYTU5NDlkOTgwZjA0Yjc5OWQ1NDYyYyBtYWlulIwJbG9zc190eXBllIwCbDKUjAZsb2FkZXKUjBhkYXRhc2V0cy5TZXF1ZW5jZURhdGFzZXSUjAxsb3NzX3dlaWdodHOUTowOcHJlcHJvY2Vzc19mbnOUXZSMD21heF9wYXRoX2xlbmd0aJRN6AOMC3JlYWRfY29uZmlnlGgCaAZoHYaUUpSMCmdldF9jb21taXSUaAJoBmgghpRSlIwFbWtkaXKUaAJoBmgjhpRSlIwJc2F2ZV9kaWZmlGgCaAZoJoaUUpSMBnByZWZpeJSMEmRpZmZ1c2lvbi9kZWZhdWx0c5SMB2hvcml6b26US4CMCmJhdGNoX3NpemWUSyCMB25fc2F2ZXOUSwWMDWxlYXJuaW5nX3JhdGWURz8qNuLrHEMtjAlkaWZmdXNpb26UjBhtb2RlbHMuR2F1c3NpYW5EaWZmdXNpb26UjApub3JtYWxpemVylIwSR2F1c3NpYW5Ob3JtYWxpemVylIwRbl9zdGVwc19wZXJfZXBvY2iUTRAnjA1sb3NzX2Rpc2NvdW50lEsBjAphZGRfZXh0cmFzlGgCaAZoNYaUUpSMDWNsaXBfZGVub2lzZWSUiYwLbl9yZWZlcmVuY2WUSwiMBmRldmljZZSMBGN1ZGGUjAllbWFfZGVjYXmURz/v1wo9cKPXjAxzZXRfbG9hZGJhc2WUaAJoBmg9hpRSlIwPcHJlZGljdF9lcHNpbG9ulImMBW1vZGVslIwTbW9kZWxzLlRlbXBvcmFsVW5ldJSMB2RhdGFzZXSUjBJ3YWxrZXIyZC1tZWRpdW0tdjKUjA1ldmFsX2ZzdHJpbmdzlGgCaAZoRYaUUpSMEW5fZGlmZnVzaW9uX3N0ZXBzlEsUjAhleHBfbmFtZZSMG2RpZmZ1c2lvbi9kZWZhdWx0c19IMTI4X1QyMJSMDWFjdGlvbl93ZWlnaHSUSwqMBHNlZWSUTowIc2F2ZXBhdGiUjDNsb2dzL3dhbGtlcjJkLW1lZGl1bS12Mi9kaWZmdXNpb24vZGVmYXVsdHNfSDEyOF9UMjCUjAZjb25maWeUjBFjb25maWcubG9jb21vdGlvbpSMCWRpbV9tdWx0c5QoSwFLAksESwh0lIwIc2V0X3NlZWSUaAJoBmhThpRSlIwNc2F2ZV9wYXJhbGxlbJSJjBFnZW5lcmF0ZV9leHBfbmFtZZRoAmgGaFeGlFKUdWJoPYaUUpQu"
++        "_value": "gASVrQQAAAAAAACMCGJ1aWx0aW5zlIwHZ2V0YXR0cpSTlIwIX19tYWluX1+UjAZQYXJzZXKUk5QpgZR9lCiMCGV4cF9uYW1llIwbZGlmZnVzaW9uL2RlZmF1bHRzX0gxMjhfVDIwlIwJbG9zc190eXBllIwCbDKUjAZkZXZpY2WUjARjdWRhlIwMc2V0X2xvYWRiYXNllGgCaAZoDoaUUpSMCXNhdmVfZGlmZpRoAmgGaBGGlFKUjAlzYXZlX2ZyZXGUTSBOjAxsb3NzX3dlaWdodHOUTowGY29tbWl0lIwvMGE2ZmViZWQzY2Y1OTIyOTQ0OTU4MzAzYjE2NjIzMjBhNzNhOGFhNSB5YW5rYWmUjA9wcmVkaWN0X2Vwc2lsb26UiYwOcHJlcHJvY2Vzc19mbnOUXZSMBmxvYWRlcpSMGGRhdGFzZXRzLlNlcXVlbmNlRGF0YXNldJSMBW1rZGlylGgCaAZoHYaUUpSMCHJlbmRlcmVylIwUdXRpbHMuTXVKb0NvUmVuZGVyZXKUjBFuX3N0ZXBzX3Blcl9lcG9jaJRNECeMDWFjdGlvbl93ZWlnaHSUSwqMBmJ1Y2tldJROjAtuX3JlZmVyZW5jZZRLCIwFbW9kZWyUjBNtb2RlbHMuVGVtcG9yYWxVbmV0lIwHbG9nYmFzZZSMBGxvZ3OUjBFuX2RpZmZ1c2lvbl9zdGVwc5RLFIwLdXNlX3BhZGRpbmeUiIwKYmF0Y2hfc2l6ZZRLIIwIc2V0X3NlZWSUaAJoBmgthpRSlIwLc2FtcGxlX2ZyZXGUTSBOjAZwcmVmaXiUjBJkaWZmdXNpb24vZGVmYXVsdHOUjA1ldmFsX2ZzdHJpbmdzlGgCaAZoM4aUUpSMDWxlYXJuaW5nX3JhdGWURz8qNuLrHEMtjARzZWVklE6MCmdldF9jb21taXSUaAJoBmg4hpRSlIwPbWF4X3BhdGhfbGVuZ3RolE3oA4wJZW1hX2RlY2F5lEc/79cKPXCj14wHaG9yaXpvbpRLgIwKYWRkX2V4dHJhc5RoAmgGaD6GlFKUjBFnZW5lcmF0ZV9leHBfbmFtZZRoAmgGaEGGlFKUjA1sb3NzX2Rpc2NvdW50lEsBjAlkaWZmdXNpb26UjBhtb2RlbHMuR2F1c3NpYW5EaWZmdXNpb26UjAtyZWFkX2NvbmZpZ5RoAmgGaEeGlFKUjAhzYXZlcGF0aJSMM2xvZ3Mvd2Fsa2VyMmQtbWVkaXVtLXYyL2RpZmZ1c2lvbi9kZWZhdWx0c19IMTI4X1QyMJSMB25fc2F2ZXOUSwWMCm5vcm1hbGl6ZXKUjBJHYXVzc2lhbk5vcm1hbGl6ZXKUjAdkYXRhc2V0lIwSd2Fsa2VyMmQtbWVkaXVtLXYylIwNY2xpcF9kZW5vaXNlZJSJjA1zYXZlX3BhcmFsbGVslImMCWRpbV9tdWx0c5QoSwFLAksESwh0lIwZZ3JhZGllbnRfYWNjdW11bGF0ZV9ldmVyeZRLAowNbl90cmFpbl9zdGVwc5RHQS6EgAAAAACMBmNvbmZpZ5SMEWNvbmZpZy5sb2NvbW90aW9ulIwJYXR0ZW50aW9ulIl1YmgOhpRSlC4="
+     },
+     "set_seed": {
+         "_string": "<bound method Parser.set_seed of Parser(prog='train.py', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)>",
+         "_type": "python_object (type = method)",
+-        "_value": "gASVqwQAAAAAAACMCGJ1aWx0aW5zlIwHZ2V0YXR0cpSTlIwIX19tYWluX1+UjAZQYXJzZXKUk5QpgZR9lCiMB2xvZ2Jhc2WUjARsb2dzlIwLdXNlX3BhZGRpbmeUiIwJc2F2ZV9mcmVxlE0gTowLc2FtcGxlX2ZyZXGUTSBOjAhyZW5kZXJlcpSMFHV0aWxzLk11Sm9Db1JlbmRlcmVylIwNbl90cmFpbl9zdGVwc5RHQS6EgAAAAACMGWdyYWRpZW50X2FjY3VtdWxhdGVfZXZlcnmUSwKMBmJ1Y2tldJROjAlhdHRlbnRpb26UiYwGY29tbWl0lIwtN2VhNDIyODYwY2MwMTA2ZTVjYTU5NDlkOTgwZjA0Yjc5OWQ1NDYyYyBtYWlulIwJbG9zc190eXBllIwCbDKUjAZsb2FkZXKUjBhkYXRhc2V0cy5TZXF1ZW5jZURhdGFzZXSUjAxsb3NzX3dlaWdodHOUTowOcHJlcHJvY2Vzc19mbnOUXZSMD21heF9wYXRoX2xlbmd0aJRN6AOMC3JlYWRfY29uZmlnlGgCaAZoHYaUUpSMCmdldF9jb21taXSUaAJoBmgghpRSlIwFbWtkaXKUaAJoBmgjhpRSlIwJc2F2ZV9kaWZmlGgCaAZoJoaUUpSMBnByZWZpeJSMEmRpZmZ1c2lvbi9kZWZhdWx0c5SMB2hvcml6b26US4CMCmJhdGNoX3NpemWUSyCMB25fc2F2ZXOUSwWMDWxlYXJuaW5nX3JhdGWURz8qNuLrHEMtjAlkaWZmdXNpb26UjBhtb2RlbHMuR2F1c3NpYW5EaWZmdXNpb26UjApub3JtYWxpemVylIwSR2F1c3NpYW5Ob3JtYWxpemVylIwRbl9zdGVwc19wZXJfZXBvY2iUTRAnjA1sb3NzX2Rpc2NvdW50lEsBjAphZGRfZXh0cmFzlGgCaAZoNYaUUpSMDWNsaXBfZGVub2lzZWSUiYwLbl9yZWZlcmVuY2WUSwiMBmRldmljZZSMBGN1ZGGUjAllbWFfZGVjYXmURz/v1wo9cKPXjAxzZXRfbG9hZGJhc2WUaAJoBmg9hpRSlIwPcHJlZGljdF9lcHNpbG9ulImMBW1vZGVslIwTbW9kZWxzLlRlbXBvcmFsVW5ldJSMB2RhdGFzZXSUjBJ3YWxrZXIyZC1tZWRpdW0tdjKUjA1ldmFsX2ZzdHJpbmdzlGgCaAZoRYaUUpSMEW5fZGlmZnVzaW9uX3N0ZXBzlEsUjAhleHBfbmFtZZSMG2RpZmZ1c2lvbi9kZWZhdWx0c19IMTI4X1QyMJSMDWFjdGlvbl93ZWlnaHSUSwqMBHNlZWSUTowIc2F2ZXBhdGiUjDNsb2dzL3dhbGtlcjJkLW1lZGl1bS12Mi9kaWZmdXNpb24vZGVmYXVsdHNfSDEyOF9UMjCUjAZjb25maWeUjBFjb25maWcubG9jb21vdGlvbpSMCWRpbV9tdWx0c5QoSwFLAksESwh0lIwIc2V0X3NlZWSUaAJoBmhThpRSlIwNc2F2ZV9wYXJhbGxlbJSJjBFnZW5lcmF0ZV9leHBfbmFtZZRoAmgGaFeGlFKUdWJoU4aUUpQu"
++        "_value": "gASVrQQAAAAAAACMCGJ1aWx0aW5zlIwHZ2V0YXR0cpSTlIwIX19tYWluX1+UjAZQYXJzZXKUk5QpgZR9lCiMCGV4cF9uYW1llIwbZGlmZnVzaW9uL2RlZmF1bHRzX0gxMjhfVDIwlIwJbG9zc190eXBllIwCbDKUjAZkZXZpY2WUjARjdWRhlIwMc2V0X2xvYWRiYXNllGgCaAZoDoaUUpSMCXNhdmVfZGlmZpRoAmgGaBGGlFKUjAlzYXZlX2ZyZXGUTSBOjAxsb3NzX3dlaWdodHOUTowGY29tbWl0lIwvMGE2ZmViZWQzY2Y1OTIyOTQ0OTU4MzAzYjE2NjIzMjBhNzNhOGFhNSB5YW5rYWmUjA9wcmVkaWN0X2Vwc2lsb26UiYwOcHJlcHJvY2Vzc19mbnOUXZSMBmxvYWRlcpSMGGRhdGFzZXRzLlNlcXVlbmNlRGF0YXNldJSMBW1rZGlylGgCaAZoHYaUUpSMCHJlbmRlcmVylIwUdXRpbHMuTXVKb0NvUmVuZGVyZXKUjBFuX3N0ZXBzX3Blcl9lcG9jaJRNECeMDWFjdGlvbl93ZWlnaHSUSwqMBmJ1Y2tldJROjAtuX3JlZmVyZW5jZZRLCIwFbW9kZWyUjBNtb2RlbHMuVGVtcG9yYWxVbmV0lIwHbG9nYmFzZZSMBGxvZ3OUjBFuX2RpZmZ1c2lvbl9zdGVwc5RLFIwLdXNlX3BhZGRpbmeUiIwKYmF0Y2hfc2l6ZZRLIIwIc2V0X3NlZWSUaAJoBmgthpRSlIwLc2FtcGxlX2ZyZXGUTSBOjAZwcmVmaXiUjBJkaWZmdXNpb24vZGVmYXVsdHOUjA1ldmFsX2ZzdHJpbmdzlGgCaAZoM4aUUpSMDWxlYXJuaW5nX3JhdGWURz8qNuLrHEMtjARzZWVklE6MCmdldF9jb21taXSUaAJoBmg4hpRSlIwPbWF4X3BhdGhfbGVuZ3RolE3oA4wJZW1hX2RlY2F5lEc/79cKPXCj14wHaG9yaXpvbpRLgIwKYWRkX2V4dHJhc5RoAmgGaD6GlFKUjBFnZW5lcmF0ZV9leHBfbmFtZZRoAmgGaEGGlFKUjA1sb3NzX2Rpc2NvdW50lEsBjAlkaWZmdXNpb26UjBhtb2RlbHMuR2F1c3NpYW5EaWZmdXNpb26UjAtyZWFkX2NvbmZpZ5RoAmgGaEeGlFKUjAhzYXZlcGF0aJSMM2xvZ3Mvd2Fsa2VyMmQtbWVkaXVtLXYyL2RpZmZ1c2lvbi9kZWZhdWx0c19IMTI4X1QyMJSMB25fc2F2ZXOUSwWMCm5vcm1hbGl6ZXKUjBJHYXVzc2lhbk5vcm1hbGl6ZXKUjAdkYXRhc2V0lIwSd2Fsa2VyMmQtbWVkaXVtLXYylIwNY2xpcF9kZW5vaXNlZJSJjA1zYXZlX3BhcmFsbGVslImMCWRpbV9tdWx0c5QoSwFLAksESwh0lIwZZ3JhZGllbnRfYWNjdW11bGF0ZV9ldmVyeZRLAowNbl90cmFpbl9zdGVwc5RHQS6EgAAAAACMBmNvbmZpZ5SMEWNvbmZpZy5sb2NvbW90aW9ulIwJYXR0ZW50aW9ulIl1YmgthpRSlC4="
+     },
+     "use_padding": true
+ }
+\ No newline at end of file
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/dataset_config.pkl b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/dataset_config.pkl
+deleted file mode 100644
+index 85d65c3..0000000
+Binary files a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/dataset_config.pkl and /dev/null differ
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/diff.txt b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/diff.txt
+deleted file mode 100644
+index 9962ce0..0000000
+--- a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/diff.txt
++++ /dev/null
+@@ -1,90 +0,0 @@
+-diff --git a/config/locomotion.py b/config/locomotion.py
+-index 90edd41..d670290 100644
+---- a/config/locomotion.py
+-+++ b/config/locomotion.py
+-@@ -22,7 +22,8 @@ base = {
+-         ## model
+-         'model': 'models.TemporalUnet',
+-         'diffusion': 'models.GaussianDiffusion',
+--        'horizon': 32,
+-+        # 'horizon': 32,
+-+        'horizon': 128, # _modified
+-         'n_diffusion_steps': 20,
+-         'action_weight': 10,
+-         'loss_weights': None,
+-diff --git a/diffuser/datasets/buffer.py b/diffuser/datasets/buffer.py
+-index 1ad2106..7173329 100644
+---- a/diffuser/datasets/buffer.py
+-+++ b/diffuser/datasets/buffer.py
+-@@ -9,7 +9,7 @@ class ReplayBuffer:
+- 
+-     def __init__(self, max_n_episodes, max_path_length, termination_penalty):
+-         self._dict = {
+--            'path_lengths': np.zeros(max_n_episodes, dtype=np.int),
+-+            'path_lengths': np.zeros(max_n_episodes, dtype=int),
+-         }
+-         self._count = 0
+-         self.max_n_episodes = max_n_episodes
+-diff --git a/diffuser/utils/rendering.py b/diffuser/utils/rendering.py
+-index 8659ff1..b057d83 100644
+---- a/diffuser/utils/rendering.py
+-+++ b/diffuser/utils/rendering.py
+-@@ -64,11 +64,16 @@ class MuJoCoRenderer:
+-         ## - 1 because the envs in renderer are fully-observed
+-         self.observation_dim = np.prod(self.env.observation_space.shape) - 1
+-         self.action_dim = np.prod(self.env.action_space.shape)
+--        try:
+--            self.viewer = mjc.MjRenderContextOffscreen(self.env.sim)
+--        except:
+--            print('[ utils/rendering ] Warning: could not initialize offscreen renderer')
+--            self.viewer = None
+-+
+-+        # try:
+-+        #     self.viewer = mjc.MjRenderContextOffscreen(self.env.sim)
+-+        # except:
+-+        #     print('[ utils/rendering ] Warning: could not initialize offscreen renderer')
+-+        #     self.viewer = None
+-+
+-+        # _modified
+-+        self.viewer = mjc.MjRenderContextOffscreen(self.env.sim)
+-+
+- 
+-     def pad_observation(self, observation):
+-         state = np.concatenate([
+-diff --git a/environment.yml b/environment.yml
+-index c14a0cf..99b3cb6 100644
+---- a/environment.yml
+-+++ b/environment.yml
+-@@ -4,13 +4,19 @@ channels:
+- - conda-forge
+- dependencies:
+- - python=3.8
+--- pip
+--- patchelf
+-+- setuptools == 63.2.0
+-+- wheel == 0.38.4
+-+- pip == 22.2.2
+-+- patchelf == 0.15.0.0
+-+- Cmake
+-+- cython == 0.29.36
+-+- numpy
+-+- cffi
+-+- lockfile
+- - pip:
+-     - -f https://download.pytorch.org/whl/torch_stable.html
+--    - numpy
+-     - gym==0.18.0
+--    - mujoco-py==2.0.2.13
+-+    - mujoco-py==2.0.2.5
+-     - matplotlib==3.3.4
+-     - torch==1.9.1+cu111
+-     - typed-argument-parser
+-@@ -21,7 +27,7 @@ dependencies:
+-     - einops
+-     - ffmpeg
+-     - ffprobe
+--    - pillow
+-+    - pillow==7.2.0
+-     - tqdm
+-     - pandas
+-     - wandb
+\ No newline at end of file
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/diffusion_config.pkl b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/diffusion_config.pkl
+deleted file mode 100644
+index d7529c0..0000000
+Binary files a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/diffusion_config.pkl and /dev/null differ
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/model_config.pkl b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/model_config.pkl
+deleted file mode 100644
+index e28a393..0000000
+Binary files a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/model_config.pkl and /dev/null differ
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/render_config.pkl b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/render_config.pkl
+deleted file mode 100644
+index a87e26d..0000000
+Binary files a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/render_config.pkl and /dev/null differ
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-0-0.png b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-0-0.png
+deleted file mode 100644
+index 8445546..0000000
+Binary files a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-0-0.png and /dev/null differ
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-0-1.png b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-0-1.png
+deleted file mode 100644
+index d9b9fee..0000000
+Binary files a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-0-1.png and /dev/null differ
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-100000-0.png b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-100000-0.png
+deleted file mode 100644
+index a453f80..0000000
+Binary files a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-100000-0.png and /dev/null differ
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-100000-1.png b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-100000-1.png
+deleted file mode 100644
+index e3de764..0000000
+Binary files a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-100000-1.png and /dev/null differ
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-20000-0.png b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-20000-0.png
+deleted file mode 100644
+index 530ab9e..0000000
+Binary files a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-20000-0.png and /dev/null differ
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-20000-1.png b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-20000-1.png
+deleted file mode 100644
+index 38c6359..0000000
+Binary files a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-20000-1.png and /dev/null differ
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-40000-0.png b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-40000-0.png
+deleted file mode 100644
+index 05923c7..0000000
+Binary files a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-40000-0.png and /dev/null differ
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-40000-1.png b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-40000-1.png
+deleted file mode 100644
+index 4b8a1b2..0000000
+Binary files a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-40000-1.png and /dev/null differ
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-60000-0.png b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-60000-0.png
+deleted file mode 100644
+index 2eabf41..0000000
+Binary files a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-60000-0.png and /dev/null differ
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-60000-1.png b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-60000-1.png
+deleted file mode 100644
+index 1ab593d..0000000
+Binary files a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-60000-1.png and /dev/null differ
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-80000-0.png b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-80000-0.png
+deleted file mode 100644
+index 9c82b51..0000000
+Binary files a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-80000-0.png and /dev/null differ
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-80000-1.png b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-80000-1.png
+deleted file mode 100644
+index 0053d3c..0000000
+Binary files a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/sample-80000-1.png and /dev/null differ
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/state_0.pt b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/state_0.pt
+deleted file mode 100644
+index 182a516..0000000
+Binary files a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/state_0.pt and /dev/null differ
+diff --git a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/trainer_config.pkl b/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/trainer_config.pkl
+deleted file mode 100644
+index 2747af9..0000000
+Binary files a/logs/walker2d-medium-v2/diffusion/defaults_H128_T20/trainer_config.pkl and /dev/null differ
