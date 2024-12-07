@@ -72,8 +72,10 @@ def check_compatibility(experiment_1, experiment_2):
         assert norm_1 == norm_2, \
             f'Normalizers should be identical, found {norm_1} and {norm_2} for field {key}'
 
-    n_steps_1 = experiment_1.diffusion.n_timesteps
-    n_steps_2 = experiment_2.diffusion.n_timesteps
-    assert n_steps_1 == n_steps_2, \
-        ('Number of timesteps should match between diffusion experiments, '
-        f'found {n_steps_1} and {n_steps_2}')
+    # _modified: commented because imle does not have n_timesteps
+
+    # n_steps_1 = experiment_1.diffusion.n_timesteps
+    # n_steps_2 = experiment_2.diffusion.n_timesteps
+    # assert n_steps_1 == n_steps_2, \
+    #     ('Number of timesteps should match between diffusion experiments, '
+    #     f'found {n_steps_1} and {n_steps_2}')

@@ -24,6 +24,7 @@ base = {
         'model': 'models.TemporalUnetIMLE',
         'imle': 'models.IMLEModel',
         'horizon': 32,
+        # 'horizon': 128,
         'action_weight': 10,
         'loss_weights': None,
         'loss_discount': 1,
@@ -109,8 +110,10 @@ base = {
     },
 
     'plan': {
-        'guide': 'sampling.IMLEValueGuide',
-        'policy': 'sampling.IMLEPolicy',
+        # 'guide': 'sampling.IMLEValueGuide',
+        # 'policy': 'sampling.IMLEPolicy',
+        'guide': 'sampling.ValueGuide',
+        'policy': 'sampling.GuidedPolicy',
         'max_episode_length': 1000,
         'batch_size': 64,
         'preprocess_fns': [],
@@ -118,7 +121,7 @@ base = {
         'seed': None,
 
         ## sample_kwargs
-        # 'n_guide_steps': 2,
+        'n_guide_steps': 2,
         'scale': 0.1,
         't_stopgrad': 2,
         'scale_grad_by_std': True,
@@ -133,18 +136,22 @@ base = {
 
         ## IMLE model
         'horizon': 32,
+        'n_diffusion_steps': 20,
         'staleness': 5,  # Sync with model staleness
         'sample_factor': 10,
 
         ## value function
-        'discount': 0.997,
+        'discount': 0.99,
 
         ## loading
-        'imle_loadpath': 'f:imle/defaults_H{horizon}_SF{sample_factor}',
-        'value_loadpath': 'f:values/defaults_H{horizon}_SF{sample_factor}_d{discount}',
+        # 'imle_loadpath': 'f:imle/defaults_H{horizon}_S{staleness}_SF{sample_factor}',
+        'diffusion_loadpath': 'f:imle/defaults_H{horizon}_S{staleness}_SF{sample_factor}',
+        # 'value_loadpath': 'f:values/defaults_H{horizon}_S{staleness}_SF{sample_factor}_d{discount}',
+        'value_loadpath': 'f:values/defaults_H{horizon}_T{n_diffusion_steps}_d{discount}',
 
-        'imle_epoch': 'latest',
+        # 'imle_epoch': 'latest',
         'value_epoch': 'latest',
+        'diffusion_epoch': 'latest',
 
         'verbose': True,
         'suffix': '0',
