@@ -110,10 +110,10 @@ base = {
     },
 
     'plan': {
-        # 'guide': 'sampling.IMLEValueGuide',
-        # 'policy': 'sampling.IMLEPolicy',
-        'guide': 'sampling.ValueGuide',
         'policy': 'sampling.GuidedPolicy',
+        # 'policy': 'sampling.IMLEPolicy',
+        # 'guide': 'sampling.ValueGuide',
+        'guide': 'sampling.IMLEValueGuide',
         'max_episode_length': 1000,
         'batch_size': 64,
         'preprocess_fns': [],

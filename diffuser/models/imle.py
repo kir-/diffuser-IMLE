@@ -77,7 +77,7 @@ class IMLEModel(nn.Module):
         loss_weights[0, :self.action_dim] = action_weight
         return loss_weights
 
-    def forward(self, cond, sample_fn, *args, **kwargs):
+    def forward(self, cond, *args, **kwargs):
         """
         Forward pass through the generator.
 
@@ -94,6 +94,8 @@ class IMLEModel(nn.Module):
         # ===============
         # MPC
 
+        sample_fn = kwargs.get('sample_fn', None)
+        
         _, values = sample_fn(self, trajectories, cond, guide = kwargs['guide'])
         trajectories, values = sort_by_values(trajectories, values)
 
