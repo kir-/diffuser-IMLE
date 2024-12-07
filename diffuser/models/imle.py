@@ -6,6 +6,8 @@ from .helpers import (
     Losses,
 )
 
+from .diffusion import sort_by_values
+
 Sample = namedtuple("Sample", "trajectories values")
 
 def find_nn(data_point, generated):
@@ -75,7 +77,7 @@ class IMLEModel(nn.Module):
         loss_weights[0, :self.action_dim] = action_weight
         return loss_weights
 
-    def forward(self, cond, *args, **kwargs):
+    def forward(self, cond, sample_fn, *args, **kwargs):
         """
         Forward pass through the generator.
 
@@ -88,7 +90,17 @@ class IMLEModel(nn.Module):
         cond_tensor = torch.stack([cond[key] for key in sorted(cond.keys())], dim=1)
         x = torch.randn(shape, device=cond_tensor.device)
         trajectories = self.generator(x, cond_tensor)
-        values = torch.zeros(batch_size, device=trajectories.device)
+
+        # ===============
+        # MPC
+
+        _, values = sample_fn(self, trajectories, cond, guide = kwargs['guide'])
+        trajectories, values = sort_by_values(trajectories, values)
+
+        # ===============
+
+
+        # values = torch.zeros(batch_size, device=trajectories.device)
         return Sample(trajectories=trajectories, values=values)
     
     def loss(self, x, cond):

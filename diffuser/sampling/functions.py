@@ -33,3 +33,11 @@ def n_step_guided_p_sample(
     noise[t == 0] = 0
 
     return model_mean + model_std * noise, y
+
+
+@torch.no_grad()
+def imle_sample(model, x, cond, guide):
+
+    y = guide(x, cond, 0)
+
+    return x, y

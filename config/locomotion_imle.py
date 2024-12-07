@@ -151,6 +151,7 @@ base = {
 
         # 'imle_epoch': 'latest',
         'value_epoch': 'latest',
+        # 'value_epoch': 0,
         'diffusion_epoch': 'latest',
 
         'verbose': True,

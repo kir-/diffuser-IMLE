@@ -10,7 +10,14 @@ class ValueGuide(nn.Module):
         self.model = model
 
     def forward(self, x, cond, t):
+        # output = self.model(x, cond, t)
+
+        # >>>>>>>>>>>>>>>>
+        # _modified: temp solution - assume t = 0 for imle
+        t = torch.zeros(x.shape[0], device=x.device)
         output = self.model(x, cond, t)
+        # <<<<<<<<<<<<<<<<
+
         return output.squeeze(dim=-1)
 
     def gradients(self, x, *args):

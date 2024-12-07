@@ -58,7 +58,8 @@ policy_config = utils.Config(
     normalizer=dataset.normalizer,
     preprocess_fns=args.preprocess_fns,
     ## sampling kwargs
-    sample_fn=sampling.n_step_guided_p_sample,
+    # sample_fn=sampling.n_step_guided_p_sample,
+    sample_fn=sampling.imle_sample,
     n_guide_steps=args.n_guide_steps,
     t_stopgrad=args.t_stopgrad,
     scale_grad_by_std=args.scale_grad_by_std,
