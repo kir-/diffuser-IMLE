@@ -126,6 +126,7 @@ class Trainer(object):
                 self.step_ema()
 
             if self.step % self.save_freq == 0:
+            # if self.step == 20000:
                 # label = self.step // self.label_freq * self.label_freq
                 # _modified
                 label = self.step

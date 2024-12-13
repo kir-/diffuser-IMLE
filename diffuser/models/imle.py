@@ -110,19 +110,19 @@ class IMLEModel(nn.Module):
     def loss(self, x, cond, epoch=0):
 
         with torch.no_grad():
-            if epoch % self.staleness == 0:
+            # if epoch % self.staleness == 0:
 
-                self.generator.eval()
+            self.generator.eval()
+            
+            # zs = torch.randn_like(x)
+            zs = torch.randn(x.shape[0]*self.sample_factor, *x.shape[1:], device=x.device)
 
-                # zs = torch.randn_like(x)
-                zs = torch.randn(x.shape[0]*self.sample_factor, *x.shape[1:], device=x.device)
+            self.cond_tensor = torch.stack([cond[key] for key in sorted(cond.keys())], dim=1) 
+            cond_imle = self.cond_tensor.repeat_interleave(10, dim=0)
+            generated = self.generator(zs, cond_imle).detach()
 
-                self.cond_tensor = torch.stack([cond[key] for key in sorted(cond.keys())], dim=1) 
-                cond_imle = self.cond_tensor.repeat_interleave(10, dim=0)
-                generated = self.generator(zs, cond_imle).detach()
-
-                nns = torch.tensor([find_nn(d, generated) for d in x], dtype=torch.long, device=x.device)
-                self.imle_nn_z = zs[nns] + torch.randn_like(zs[nns]) * self.noise_coef
+            nns = torch.tensor([find_nn(d, generated) for d in x], dtype=torch.long, device=x.device)
+            self.imle_nn_z = zs[nns] + torch.randn_like(zs[nns]) * self.noise_coef
 
         self.generator.train()
         outs = self.generator(self.imle_nn_z, self.cond_tensor)
