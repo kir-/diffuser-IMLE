@@ -50,7 +50,8 @@ base = {
         'exp_name': watch(args_to_watch),
 
         ## training
-        'n_steps_per_epoch': 10000,
+        # 'n_steps_per_epoch': 10000,
+        'n_steps_per_epoch': 1000,
         'loss_type': 'l2',
         'n_train_steps': 1e6,
         'batch_size': 32,

@@ -103,7 +103,9 @@ class Trainer(object):
     #------------------------------------ api ------------------------------------#
     #-----------------------------------------------------------------------------#
 
-    def train(self, n_train_steps):
+    def train(self, n_train_steps, epoch=0):
+        epoch_loss = 0
+        epoch_iter = 0
 
         timer = Timer()
         for step in range(n_train_steps):
@@ -111,9 +113,11 @@ class Trainer(object):
                 batch = next(self.dataloader)
                 batch = batch_to_device(batch)
 
-                loss, infos = self.model.loss(*batch)
+                loss, infos = self.model.loss(*batch, epoch=epoch)
                 loss = loss / self.gradient_accumulate_every
                 loss.backward()
+                epoch_loss += loss.item()
+                epoch_iter += 1
 
             self.optimizer.step()
             self.optimizer.zero_grad()
@@ -122,12 +126,15 @@ class Trainer(object):
                 self.step_ema()
 
             if self.step % self.save_freq == 0:
-                label = self.step // self.label_freq * self.label_freq
+                # label = self.step // self.label_freq * self.label_freq
+                # _modified
+                label = self.step
                 self.save(label)
 
             if self.step % self.log_freq == 0:
                 infos_str = ' | '.join([f'{key}: {val:8.4f}' for key, val in infos.items()])
-                print(f'{self.step}: {loss:8.4f} | {infos_str} | t: {timer():8.4f}', flush=True)
+                # print(f'{self.step}: {loss:8.4f} | {infos_str} | t: {timer():8.4f}', flush=True)
+                print(f'{self.step}: {loss:8.4f} | {epoch_loss / epoch_iter:8.4f}', flush=True)
 
             if self.step == 0 and self.sample_freq:
                 self.render_reference(self.n_reference)

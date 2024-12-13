@@ -112,4 +112,4 @@ n_epochs = int(args.n_train_steps // args.n_steps_per_epoch)
 
 for i in range(n_epochs):
     print(f'Epoch {i+1} / {n_epochs} | {args.savepath}')
-    trainer.train(n_train_steps=args.n_steps_per_epoch)
+    trainer.train(n_train_steps=args.n_steps_per_epoch, epoch=i)
