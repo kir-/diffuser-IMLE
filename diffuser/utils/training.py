@@ -9,6 +9,8 @@ from .arrays import batch_to_device, to_np, to_device, apply_dict
 from .timer import Timer
 from .cloud import sync_logs
 
+import wandb
+
 def cycle(dl):
     while True:
         for data in dl:
@@ -119,6 +121,8 @@ class Trainer(object):
                 epoch_loss += loss.item()
                 epoch_iter += 1
 
+                wandb.log({"iteration loss": loss.item()})
+
             self.optimizer.step()
             self.optimizer.zero_grad()
 
@@ -144,6 +148,8 @@ class Trainer(object):
                 self.render_samples()
 
             self.step += 1
+
+        wandb.log({"loss": epoch_loss / epoch_iter, "epoch": epoch})    
 
     def save(self, epoch):
         '''
