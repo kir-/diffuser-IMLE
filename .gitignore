@@ -140,3 +140,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+.DS_Store
+diffuser/pyvenv.cfg
+diffuser/share/
