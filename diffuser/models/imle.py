@@ -93,16 +93,16 @@ class IMLEModel(nn.Module):
 
         values = torch.zeros(batch_size, device=trajectories.device)
 
-        # # ===============
-        # # MPC
-        # # Comment when training
+        # ===============
+        # MPC
+        # Comment when training
 
-        # sample_fn = kwargs.get('sample_fn', None)
-        
-        # _, values = sample_fn(self, trajectories, cond, guide = kwargs['guide'])
-        # trajectories, values = sort_by_values(trajectories, values)
+        sample_fn = kwargs.get('sample_fn', None)
 
-        # # ===============
+        _, values = sample_fn(self, trajectories, cond, guide = kwargs['guide'])
+        trajectories, values = sort_by_values(trajectories, values)
+
+        # ===============
 
 
         return Sample(trajectories=trajectories, values=values)
@@ -118,7 +118,7 @@ class IMLEModel(nn.Module):
             zs = torch.randn(x.shape[0]*self.sample_factor, *x.shape[1:], device=x.device)
 
             self.cond_tensor = torch.stack([cond[key] for key in sorted(cond.keys())], dim=1) 
-            cond_imle = self.cond_tensor.repeat_interleave(10, dim=0)
+            cond_imle = self.cond_tensor.repeat_interleave(self.sample_factor, dim=0)
             generated = self.generator(zs, cond_imle).detach()
 
             nns = torch.tensor([find_nn(d, generated) for d in x], dtype=torch.long, device=x.device)

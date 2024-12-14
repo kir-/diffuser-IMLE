@@ -121,7 +121,7 @@ class Trainer(object):
                 epoch_loss += loss.item()
                 epoch_iter += 1
 
-                wandb.log({"iteration loss": loss.item()})
+                # wandb.log({"iteration loss": loss.item()})
 
             self.optimizer.step()
             self.optimizer.zero_grad()
@@ -141,15 +141,15 @@ class Trainer(object):
                 # print(f'{self.step}: {loss:8.4f} | {infos_str} | t: {timer():8.4f}', flush=True)
                 print(f'{self.step}: {loss:8.4f} | {epoch_loss / epoch_iter:8.4f}', flush=True)
 
-            if self.step == 0 and self.sample_freq:
-                self.render_reference(self.n_reference)
+            # if self.step == 0 and self.sample_freq:
+            #     self.render_reference(self.n_reference)
 
-            if self.sample_freq and self.step % self.sample_freq == 0:
-                self.render_samples()
+            # if self.sample_freq and self.step % self.sample_freq == 0:
+            #     self.render_samples()
 
             self.step += 1
 
-        wandb.log({"loss": epoch_loss / epoch_iter, "epoch": epoch})    
+        # wandb.log({"loss": epoch_loss / epoch_iter, "epoch": epoch})    
 
     def save(self, epoch):
         '''

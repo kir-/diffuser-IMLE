@@ -28,12 +28,15 @@ base = {
         'action_weight': 10,
         'loss_weights': None,
         'loss_discount': 1,
-        'dim_mults': (1, 2, 4, 8),
+        # 'dim_mults': (1, 2, 4, 8),
+        'dim_mults': (1, 4, 16),
         'attention': False,
         'renderer': 'utils.MuJoCoRenderer',
         'staleness': 5,  # Number of epochs before updating nearest neighbors
-        'sample_factor': 10,  # Number of samples per training point
-        'noise_coef': 0.01,  # Noise coefficient for perturbing z-space,
+        # 'sample_factor': 10,  # Number of samples per training point
+        'sample_factor': 20,
+        # 'noise_coef': 0.01,  # Noise coefficient for perturbing z-space,
+        'noise_coef': 0.01,
         'z_dim': 32, # Latent Space Dimension
 
         ## dataset
@@ -55,7 +58,8 @@ base = {
         'loss_type': 'l2',
         'n_train_steps': 1e6,
         'batch_size': 32,
-        'learning_rate': 2e-4,
+        # 'learning_rate': 2e-4,
+        'learning_rate': 0.0001,
         'gradient_accumulate_every': 2,
         'ema_decay': 0.995,
         'save_freq': 20000,
@@ -139,7 +143,8 @@ base = {
         'horizon': 32,
         'n_diffusion_steps': 20,
         'staleness': 5,  # Sync with model staleness
-        'sample_factor': 10,
+        # 'sample_factor': 10,
+        'sample_factor': 20,
 
         ## value function
         'discount': 0.99,

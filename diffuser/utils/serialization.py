@@ -33,11 +33,12 @@ def load_config(*loadpath):
     print(config)
     return config
 
-def load_diffusion(*loadpath, epoch='latest', device='cuda:0', seed=None):
+def load_diffusion(*loadpath, epoch='latest', device='cuda:0', seed=None, generator='diffusion_config.pkl'):
     dataset_config = load_config(*loadpath, 'dataset_config.pkl')
     render_config = load_config(*loadpath, 'render_config.pkl')
     model_config = load_config(*loadpath, 'model_config.pkl')
-    diffusion_config = load_config(*loadpath, 'diffusion_config.pkl')
+    # diffusion_config = load_config(*loadpath, 'diffusion_config.pkl')
+    diffusion_config = load_config(*loadpath, generator)
     trainer_config = load_config(*loadpath, 'trainer_config.pkl')
 
     ## remove absolute path for results loaded from azure

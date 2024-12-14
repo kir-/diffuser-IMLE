@@ -22,7 +22,7 @@ args = Parser().parse_args('plan')
 ## load diffusion model and value function from disk
 diffusion_experiment = utils.load_diffusion(
     args.loadbase, args.dataset, args.diffusion_loadpath,
-    epoch=args.diffusion_epoch, seed=args.seed,
+    epoch=args.diffusion_epoch, seed=args.seed, generator='imle_config.pkl'
 )
 value_experiment = utils.load_diffusion(
     args.loadbase, args.dataset, args.value_loadpath,
