@@ -112,6 +112,21 @@ class WeightedLoss(nn.Module):
         a0_loss = (loss[:, 0, :self.action_dim] / self.weights[0, :self.action_dim]).mean()
         return weighted_loss, {'a0_loss': a0_loss}
 
+class IMLELoss(nn.Module):
+    def __init__(self, weights, action_dim):
+        super().__init__()
+        self.register_buffer('weights', weights)
+        self.action_dim = action_dim
+
+    def forward(self, pred, targ):
+        '''
+        pred, targ : tensors of shape [batch_size, horizon, transition_dim]
+        '''
+        loss = F.mse_loss(pred, targ, reduction='none')  # Per-sample loss
+        weighted_loss = (loss * self.weights).mean()  # Weighted aggregation
+        a0_loss = (loss[:, 0, :self.action_dim] / self.weights[0, :self.action_dim]).mean() 
+        return weighted_loss, {'a0_loss': a0_loss}
+    
 class ValueLoss(nn.Module):
     def __init__(self, *args):
         super().__init__()
@@ -162,4 +177,5 @@ Losses = {
     'l2': WeightedL2,
     'value_l1': ValueL1,
     'value_l2': ValueL2,
+    'IMLE': IMLELoss
 }
