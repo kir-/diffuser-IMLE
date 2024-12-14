@@ -33,3 +33,4 @@ dependencies:
     - cryptography
     - git+https://github.com/JannerM/doodad.git@janner
     - gdown>=4.6.0
+    - transformers
