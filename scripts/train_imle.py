@@ -6,8 +6,10 @@ import torch
 #-----------------------------------------------------------------------------#
 
 class Parser(utils.Parser):
-    dataset: str = 'hopper-medium-expert-v2'
-    config: str = 'config.locomotion_imle'
+    # dataset: str = 'hopper-medium-expert-v2'
+    # config: str = 'config.locomotion_imle'
+    dataset: str = 'maze2d-large-v1'
+    config: str = 'config.maze2d_imle'
 
 args = Parser().parse_args('imle')
 
@@ -48,7 +50,8 @@ model_config = utils.Config(
     savepath=(args.savepath, 'model_config.pkl'),
     horizon=args.horizon,
     transition_dim=observation_dim + action_dim,
-    cond_dim=observation_dim,
+    # cond_dim=observation_dim, #walker2d
+    cond_dim=2*observation_dim, # maze2d
     dim_mults=args.dim_mults,
     attention=args.attention,
     device=args.device,
@@ -80,6 +83,7 @@ trainer_config = utils.Config(
     results_folder=args.savepath,
     bucket=args.bucket,
     n_reference=args.n_reference,
+    n_samples=args.n_samples, # maze2d
 )
 
 #-----------------------------------------------------------------------------#

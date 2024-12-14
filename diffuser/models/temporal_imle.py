@@ -70,6 +70,7 @@ class ResidualTemporalBlock(nn.Module):
         """
         x    : [batch_size x inp_channels x horizon]
         cond : [batch_size x cond_dim]
+        cond : [batch_size x cond_dim x 2]
         """
         # Generate scale and shift using `AdaptiveMLP`
         scale_shift = self.adaptive_mlp(cond)  # [batch_size, out_channels * 2]

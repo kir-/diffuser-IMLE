@@ -59,6 +59,7 @@ base = {
         'n_saves': 5,
         'save_parallel': False,
         'n_reference': 8,
+        'n_samples': 2,
         'bucket': None,
         'device': 'cuda',
         'seed': None,

@@ -53,6 +53,7 @@ class Trainer(object):
         save_parallel=False,
         results_folder='./results',
         n_reference=8,
+        n_samples=2,
         bucket=None,
     ):
         super().__init__()
@@ -73,7 +74,7 @@ class Trainer(object):
 
         self.dataset = dataset
         self.dataloader = cycle(torch.utils.data.DataLoader(
-            self.dataset, batch_size=train_batch_size, num_workers=1, shuffle=True, pin_memory=True
+            self.dataset, batch_size=train_batch_size, num_workers=0, shuffle=True, pin_memory=True
         ))
         # # _modified
         # self.dataloader = cycle(torch.utils.data.DataLoader(
@@ -88,6 +89,7 @@ class Trainer(object):
         self.logdir = results_folder
         self.bucket = bucket
         self.n_reference = n_reference
+        self.n_samples = n_samples
 
         self.reset_parameters()
         self.step = 0

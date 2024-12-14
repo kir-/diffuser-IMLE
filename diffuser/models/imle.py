@@ -48,6 +48,22 @@ class IMLEModel(nn.Module):
         loss_weights = self.get_loss_weights(action_weight, loss_discount, loss_weights)
         self.loss_fn = Losses[loss_type](loss_weights, self.action_dim)
 
+    @torch.no_grad()
+    def conditional_sample(self, cond, *args, horizon=None, **kwargs):
+        """
+        Forward pass through the generator.
+
+        Returns:
+            torch.Tensor: Generated trajectories [batch_size, horizon, output_dim].
+        """
+        batch_size = len(cond[0])
+        shape = (batch_size, self.horizon, self.transition_dim)
+        cond_tensor = torch.stack([cond[key] for key in sorted(cond.keys())], dim=1)
+        cond_tensor = cond_tensor.view(cond_tensor.size(0), -1)
+        x = torch.randn(shape, device=cond_tensor.device)
+        trajectories = self.generator(x, cond_tensor)
+        return trajectories
+
     def get_loss_weights(self, action_weight, discount, weights_dict):
         '''
             sets loss coefficients for trajectory

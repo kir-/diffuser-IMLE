@@ -2,6 +2,7 @@ import os
 import collections
 import importlib
 import pickle
+import torch
 
 def import_class(_class):
     if type(_class) is not str: return _class
@@ -18,11 +19,20 @@ def import_class(_class):
     print(f'[ utils/config ] Imported {repo_name}.{module_name}:{class_name}')
     return _class
 
+
+def get_default_device():
+    if torch.backends.mps.is_available():
+        return 'mps:0'
+    elif torch.cuda.is_available():
+        return 'cuda:0'
+    else:
+        return 'cpu'
+
 class Config(collections.Mapping):
 
     def __init__(self, _class, verbose=True, savepath=None, device=None, **kwargs):
         self._class = import_class(_class)
-        self._device = device
+        self._device = device if device else get_default_device()
         self._dict = {}
 
         for key, val in kwargs.items():
@@ -63,6 +73,9 @@ class Config(collections.Mapping):
 
     def __call__(self, *args, **kwargs):
         instance = self._class(*args, **kwargs, **self._dict)
-        if self._device:
-            instance = instance.to(self._device)
+        if self._device and hasattr(instance, 'to') and callable(instance.to):
+            print(f"[ utils/config ] Moving {type(instance).__name__} to device: {self._device}")
+            instance = instance.to('cuda')
+        else:
+            print(f"[ utils/config ] Skipping device transfer for: {type(instance).__name__}")
         return instance
