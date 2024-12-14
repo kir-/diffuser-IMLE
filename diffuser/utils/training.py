@@ -9,8 +9,6 @@ from .arrays import batch_to_device, to_np, to_device, apply_dict
 from .timer import Timer
 from .cloud import sync_logs
 
-import wandb
-
 def cycle(dl):
     while True:
         for data in dl:
@@ -76,10 +74,6 @@ class Trainer(object):
         self.dataloader = cycle(torch.utils.data.DataLoader(
             self.dataset, batch_size=train_batch_size, num_workers=0, shuffle=True, pin_memory=True
         ))
-        # # _modified
-        # self.dataloader = cycle(torch.utils.data.DataLoader(
-        #     self.dataset, batch_size=train_batch_size, num_workers=0, shuffle=True, pin_memory=True
-        # ))
         self.dataloader_vis = cycle(torch.utils.data.DataLoader(
             self.dataset, batch_size=1, num_workers=0, shuffle=True, pin_memory=True
         ))
@@ -107,9 +101,7 @@ class Trainer(object):
     #------------------------------------ api ------------------------------------#
     #-----------------------------------------------------------------------------#
 
-    def train(self, n_train_steps, epoch=0):
-        epoch_loss = 0
-        epoch_iter = 0
+    def train(self, n_train_steps):
 
         timer = Timer()
         for step in range(n_train_steps):
@@ -117,13 +109,9 @@ class Trainer(object):
                 batch = next(self.dataloader)
                 batch = batch_to_device(batch)
 
-                loss, infos = self.model.loss(*batch, epoch=epoch)
+                loss, infos = self.model.loss(*batch)
                 loss = loss / self.gradient_accumulate_every
                 loss.backward()
-                epoch_loss += loss.item()
-                epoch_iter += 1
-
-                # wandb.log({"iteration loss": loss.item()})
 
             self.optimizer.step()
             self.optimizer.zero_grad()
@@ -132,26 +120,20 @@ class Trainer(object):
                 self.step_ema()
 
             if self.step % self.save_freq == 0:
-            # if self.step == 20000:
-                # label = self.step // self.label_freq * self.label_freq
-                # _modified
-                label = self.step
+                label = self.step // self.label_freq * self.label_freq
                 self.save(label)
 
             if self.step % self.log_freq == 0:
                 infos_str = ' | '.join([f'{key}: {val:8.4f}' for key, val in infos.items()])
-                # print(f'{self.step}: {loss:8.4f} | {infos_str} | t: {timer():8.4f}', flush=True)
-                print(f'{self.step}: {loss:8.4f} | {epoch_loss / epoch_iter:8.4f}', flush=True)
+                print(f'{self.step}: {loss:8.4f} | {infos_str} | t: {timer():8.4f}')
 
-            # if self.step == 0 and self.sample_freq:
-            #     self.render_reference(self.n_reference)
+            if self.step == 0 and self.sample_freq:
+                self.render_reference(self.n_reference)
 
-            # if self.sample_freq and self.step % self.sample_freq == 0:
-            #     self.render_samples()
+            if self.sample_freq and self.step % self.sample_freq == 0:
+                self.render_samples(n_samples=self.n_samples)
 
             self.step += 1
-
-        # wandb.log({"loss": epoch_loss / epoch_iter, "epoch": epoch})    
 
     def save(self, epoch):
         '''
@@ -165,7 +147,7 @@ class Trainer(object):
         }
         savepath = os.path.join(self.logdir, f'state_{epoch}.pt')
         torch.save(data, savepath)
-        print(f'[ utils/training ] Saved model to {savepath}', flush=True)
+        print(f'[ utils/training ] Saved model to {savepath}')
         if self.bucket is not None:
             sync_logs(self.logdir, bucket=self.bucket, background=self.save_parallel)
 
@@ -204,6 +186,15 @@ class Trainer(object):
         normed_observations = trajectories[:, :, self.dataset.action_dim:]
         observations = self.dataset.normalizer.unnormalize(normed_observations, 'observations')
 
+        # from diffusion.datasets.preprocessing import blocks_cumsum_quat
+        # # observations = conditions + blocks_cumsum_quat(deltas)
+        # observations = conditions + deltas.cumsum(axis=1)
+
+        #### @TODO: remove block-stacking specific stuff
+        # from diffusion.datasets.preprocessing import blocks_euler_to_quat, blocks_add_kuka
+        # observations = blocks_add_kuka(observations)
+        ####
+
         savepath = os.path.join(self.logdir, f'_sample-reference.png')
         self.renderer.composite(savepath, observations)
 
@@ -225,14 +216,18 @@ class Trainer(object):
             )
 
             ## [ n_samples x horizon x (action_dim + observation_dim) ]
-            samples = self.ema_model(conditions)
-            trajectories = to_np(samples.trajectories)
+            samples = self.ema_model.conditional_sample(conditions)
+            samples = to_np(samples)
 
             ## [ n_samples x horizon x observation_dim ]
-            normed_observations = trajectories[:, :, self.dataset.action_dim:]
+            normed_observations = samples[:, :, self.dataset.action_dim:]
 
             # [ 1 x 1 x observation_dim ]
             normed_conditions = to_np(batch.conditions[0])[:,None]
+
+            # from diffusion.datasets.preprocessing import blocks_cumsum_quat
+            # observations = conditions + blocks_cumsum_quat(deltas)
+            # observations = conditions + deltas.cumsum(axis=1)
 
             ## [ n_samples x (horizon + 1) x observation_dim ]
             normed_observations = np.concatenate([
@@ -242,6 +237,11 @@ class Trainer(object):
 
             ## [ n_samples x (horizon + 1) x observation_dim ]
             observations = self.dataset.normalizer.unnormalize(normed_observations, 'observations')
+
+            #### @TODO: remove block-stacking specific stuff
+            # from diffusion.datasets.preprocessing import blocks_euler_to_quat, blocks_add_kuka
+            # observations = blocks_add_kuka(observations)
+            ####
 
             savepath = os.path.join(self.logdir, f'sample-{self.step}-{i}.png')
             self.renderer.composite(savepath, observations)

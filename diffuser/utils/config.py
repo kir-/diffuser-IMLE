@@ -21,9 +21,7 @@ def import_class(_class):
 
 
 def get_default_device():
-    if torch.backends.mps.is_available():
-        return 'mps:0'
-    elif torch.cuda.is_available():
+    if torch.cuda.is_available():
         return 'cuda:0'
     else:
         return 'cpu'

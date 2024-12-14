@@ -6,8 +6,6 @@ from .helpers import (
     Losses,
 )
 
-from .diffusion import sort_by_values
-
 Sample = namedtuple("Sample", "trajectories values")
 
 def find_nn(data_point, generated):
@@ -94,73 +92,15 @@ class IMLEModel(nn.Module):
         return loss_weights
 
     def forward(self, cond, *args, **kwargs):
-        """
-        Forward pass through the generator.
+        return self.conditional_sample(cond=cond, *args, **kwargs)
 
-        Returns:
-            torch.Tensor: Generated trajectories [batch_size, horizon, output_dim].
-        """
-        batch_size = len(cond[0])
-        # Should be latent shape?
-        shape = (batch_size, self.horizon, self.transition_dim)
+    
+    def loss(self, x, cond, epoch=1):
+        zs = torch.randn_like(x)
         cond_tensor = torch.stack([cond[key] for key in sorted(cond.keys())], dim=1)
-        x = torch.randn(shape, device=cond_tensor.device)
-        trajectories = self.generator(x, cond_tensor)
-
-        values = torch.zeros(batch_size, device=trajectories.device)
-
-        # ===============
-        # MPC
-        # Comment when training
-
-        sample_fn = kwargs.get('sample_fn', None)
-
-        _, values = sample_fn(self, trajectories, cond, guide = kwargs['guide'])
-        trajectories, values = sort_by_values(trajectories, values)
-
-        # ===============
-
-
-        return Sample(trajectories=trajectories, values=values)
-    
-    def loss(self, x, cond, epoch=0):
-
-        with torch.no_grad():
-            # if epoch % self.staleness == 0:
-
-            self.generator.eval()
-            
-            # zs = torch.randn_like(x)
-            zs = torch.randn(x.shape[0]*self.sample_factor, *x.shape[1:], device=x.device)
-
-            self.cond_tensor = torch.stack([cond[key] for key in sorted(cond.keys())], dim=1) 
-            cond_imle = self.cond_tensor.repeat_interleave(self.sample_factor, dim=0)
-            generated = self.generator(zs, cond_imle).detach()
-
-            nns = torch.tensor([find_nn(d, generated) for d in x], dtype=torch.long, device=x.device)
-            self.imle_nn_z = zs[nns] + torch.randn_like(zs[nns]) * self.noise_coef
-
-        self.generator.train()
-        outs = self.generator(self.imle_nn_z, self.cond_tensor)
-        
-        
+        cond_tensor = cond_tensor.view(cond_tensor.size(0), -1)
+        generated = self.generator(zs, cond_tensor).detach()
+        nns = torch.tensor([find_nn(d, generated) for d in x], dtype=torch.long, device=x.device)
+        imle_nn_z = zs[nns] + torch.randn_like(zs[nns]) * self.noise_coef
+        outs = self.generator(imle_nn_z, cond_tensor)
         return self.loss_fn(outs, x)
-
-class ValueIMLE(IMLEModel):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-    
-    def loss(self, x, cond):
-        """
-        Compute the loss for ValueIMLE,
-
-        Args:
-            x (torch.Tensor): Ground truth trajectories [batch_size, horizon, output_dim].
-            s_t (torch.Tensor): Conditioning states [batch_size, cond_dim].
-
-        Returns:
-            torch.Tensor: Computed loss.
-        """
-        loss = super().loss(x, cond)
-
-        return loss
