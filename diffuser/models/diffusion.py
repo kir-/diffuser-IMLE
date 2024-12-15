@@ -12,8 +12,6 @@ from .helpers import (
     Losses,
 )
 
-from .decision_transformer import DecisionTransformer
-
 
 Sample = namedtuple('Sample', 'trajectories values chains')
 
@@ -218,6 +216,10 @@ class GaussianDiffusion(nn.Module):
 
         assert noise.shape == x_recon.shape
 
+        x_recon = x_recon[:, -self.horizon:, :]
+        noise = noise[:, -self.horizon:, :]
+        x_start = x_start[:, -self.horizon:, :]
+
         if self.predict_epsilon:
             loss, info = self.loss_fn(x_recon, noise)
         else:
@@ -248,16 +250,4 @@ class ValueDiffusion(GaussianDiffusion):
 
     def forward(self, x, cond, t):
         return self.model(x, cond, t)
-    
-class ValueTransformer(DecisionTransformer):
-
-    def p_losses(self, x_start, cond, target, t):
-        noise = torch.randn_like(x_start)
-
-        x_noisy = self.q_sample(x_start=x_start, t=t, noise=noise)
-        x_noisy = apply_conditioning(x_noisy, cond, self.action_dim)
-        pred = self.forward(x_noisy, cond, t)
-
-        loss, info = self.loss_fn(pred, target)
-        return loss, info
 

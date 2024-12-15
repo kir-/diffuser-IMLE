@@ -51,15 +51,18 @@ class DecisionTransformer(nn.Module):
             observation_dim,
             action_dim,
             hidden_size,
-            horizon=None,
+            horizon,
+            past_horizon,
             max_ep_len=4096,
             action_tanh=True,
             time_dim = 32,
             **kwargs
     ):
+        super().__init__() 
         self.observation_dim = observation_dim
         self.action_dim = action_dim
         self.horizon = horizon
+        self.past_horizon = past_horizon
 
         self.hidden_size = hidden_size
         config = transformers.GPT2Config(
@@ -94,7 +97,7 @@ class DecisionTransformer(nn.Module):
 
     # def forward(self, states, actions, rewards, returns_to_go, timesteps, attention_mask=None):
     def forward(self, x, cond, t, attention_mask=None):
-
+        device = x.device
         batch_size, seq_length, _ = x.shape
         # batch_size, seq_length = states.shape[0], states.shape[1]
 
@@ -104,7 +107,7 @@ class DecisionTransformer(nn.Module):
 
         if attention_mask is None:
             # attention mask for GPT: 1 if can be attended to, 0 if not
-            attention_mask = torch.ones((batch_size, seq_length), dtype=torch.long)
+            attention_mask = torch.ones((batch_size, seq_length), dtype=torch.long).to(device)
 
         # embed each modality with a different head
         state_embeddings = self.embed_state(states)
@@ -112,7 +115,7 @@ class DecisionTransformer(nn.Module):
         timestep_embeddings = self.embed_timestep(t)
 
         # positional embeddings
-        position_ids = torch.arange(0, seq_length, dtype=torch.long).unsqueeze(0).repeat(batch_size, 1)
+        position_ids = torch.arange(0, seq_length, dtype=torch.long).unsqueeze(0).repeat(batch_size, 1).to(device)
         position_embeddings = self.position_embedding(position_ids)
         state_embeddings = state_embeddings + position_embeddings
         action_embeddings = action_embeddings + position_embeddings
@@ -127,7 +130,7 @@ class DecisionTransformer(nn.Module):
 
         # to make the attention mask fit the stacked inputs, have to stack it as well
         stacked_attention_mask = torch.stack(
-            (attention_mask, attention_mask, attention_mask), dim=1
+            (attention_mask, attention_mask), dim=1
         ).permute(0, 2, 1).reshape(batch_size, 2*seq_length)
 
         # we feed in the input embeddings (not word indices as in NLP) to the model
@@ -145,8 +148,8 @@ class DecisionTransformer(nn.Module):
         # return_preds = self.predict_return(x[:,2])  # predict next return given state and action
         state_preds = self.predict_state(x[:,1])    # predict next state given state and action
         action_preds = self.predict_action(x[:,0])  # predict next action given state
-
-        return state_preds, action_preds
+        trajectories_predicted = torch.cat([action_preds, state_preds], dim=-1)
+        return trajectories_predicted 
 
     # def get_action(self, states, actions, rewards, returns_to_go, timesteps, **kwargs):
     #     # we don't care about the past rewards in this model
