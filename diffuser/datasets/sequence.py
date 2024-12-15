@@ -15,13 +15,14 @@ ValueBatch = namedtuple('ValueBatch', 'trajectories conditions values')
 
 class SequenceDataset(torch.utils.data.Dataset):
 
-    def __init__(self, env='hopper-medium-replay', horizon=64,
+    def __init__(self, env='hopper-medium-replay', horizon=64, past_horizon=32,
         normalizer='LimitsNormalizer', preprocess_fns=[], max_path_length=1000,
         max_n_episodes=10000, termination_penalty=0, use_padding=True, seed=None):
         self.preprocess_fn = get_preprocess_fn(preprocess_fns, env)
         self.env = env = load_environment(env)
         self.env.seed(seed)
         self.horizon = horizon
+        self.past_horizon = past_horizon
         self.max_path_length = max_path_length
         self.use_padding = use_padding
         itr = sequence_dataset(env, self.preprocess_fn)
@@ -32,7 +33,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         fields.finalize()
 
         self.normalizer = DatasetNormalizer(fields, normalizer, path_lengths=fields['path_lengths'])
-        self.indices = self.make_indices(fields.path_lengths, horizon)
+        self.indices = self.make_indices(fields.path_lengths, horizon + past_horizon)
 
         self.observation_dim = fields.observations.shape[-1]
         self.action_dim = fields.actions.shape[-1]
@@ -70,11 +71,14 @@ class SequenceDataset(torch.utils.data.Dataset):
         indices = np.array(indices)
         return indices
 
-    def get_conditions(self, observations):
+    def get_conditions(self, actions, observations):
         '''
             condition on current observation for planning
         '''
-        return {0: observations[0]}
+        cond_dict = {}
+        for idx in range(self.past_horizon):
+            cond_dict[idx] = np.concatenate([actions[idx], observations[idx]], axis=-1)
+        return cond_dict
 
     def __len__(self):
         return len(self.indices)
@@ -85,7 +89,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         observations = self.fields.normed_observations[path_ind, start:end]
         actions = self.fields.normed_actions[path_ind, start:end]
 
-        conditions = self.get_conditions(observations)
+        conditions = self.get_conditions(actions, observations)
         trajectories = np.concatenate([actions, observations], axis=-1)
         batch = Batch(trajectories, conditions)
         return batch

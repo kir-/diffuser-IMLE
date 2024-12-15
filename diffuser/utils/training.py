@@ -212,7 +212,7 @@ class Trainer(object):
             normed_observations = trajectories[:, :, self.dataset.action_dim:]
 
             # [ 1 x 1 x observation_dim ]
-            normed_conditions = to_np(batch.conditions[0])[:,None]
+            normed_conditions = to_np(batch.conditions[0][:, self.dataset.action_dim:])[:, None]
 
             ## [ n_samples x (horizon + 1) x observation_dim ]
             normed_observations = np.concatenate([

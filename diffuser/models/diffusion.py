@@ -216,6 +216,11 @@ class GaussianDiffusion(nn.Module):
 
         assert noise.shape == x_recon.shape
 
+        # TODO: Verify this is how we want to handle the past horizon
+        x_recon = x_recon[:, -self.horizon:, :]
+        noise = noise[:, -self.horizon:, :]
+        x_start = x_start[:, -self.horizon:, :]
+
         if self.predict_epsilon:
             loss, info = self.loss_fn(x_recon, noise)
         else:
