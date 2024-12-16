@@ -20,19 +20,12 @@ def import_class(_class):
     return _class
 
 
-def get_default_device():
-    if torch.backends.mps.is_available():
-        return 'mps:0'
-    elif torch.cuda.is_available():
-        return 'cuda:0'
-    else:
-        return 'cpu'
 
 class Config(collections.Mapping):
 
     def __init__(self, _class, verbose=True, savepath=None, device=None, **kwargs):
         self._class = import_class(_class)
-        self._device = device if device else get_default_device()
+        self._device = device
         self._dict = {}
 
         for key, val in kwargs.items():
