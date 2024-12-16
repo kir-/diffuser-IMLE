@@ -84,10 +84,12 @@ base = {
         'batch_size': 1,
         'device': 'cuda',
 
-        ## diffusion model
-        'horizon': 256,
+        ## IMLE
+        'horizon': 384,
         'n_diffusion_steps': 256,
         'normalizer': 'LimitsNormalizer',
+        'staleness': 5,  # Sync with model staleness
+        'sample_factor': 10,
 
         ## serialization
         'vis_freq': 10,
@@ -99,8 +101,8 @@ base = {
         'conditional': False,
 
         ## loading
-        'imle_loadpath': 'f:imle/defaults_H{horizon}_SF{sample_factor}',
-        'imle_epoch': 'latest',
+        'diffusion_loadpath': 'f:imle/defaults_H{horizon}_S{staleness}_SF{sample_factor}',
+        'diffusion_epoch': 'latest',
 
     },
 }
