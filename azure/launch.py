@@ -20,6 +20,7 @@ def remote_fn(doodad_config, variant):
     os.system(f'mv {codepath}/git {codepath}/.git')
     os.system(
         f'''export PYTHONPATH=$PYTHONPATH:{codepath} && '''
+        f'''export CUDA_VISIBLE_DEVICES=0 && '''
         f'''export D4RL_DATASET_DIR={d4rl_path} && '''
         f'''python {os.path.join(codepath, script)} '''
         f'''--config {config} '''

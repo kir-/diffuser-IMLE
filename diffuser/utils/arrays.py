@@ -4,7 +4,7 @@ import torch
 import pdb
 
 DTYPE = torch.float
-DEVICE = 'cuda:0'
+DEVICE = 'mps:0'
 
 #-----------------------------------------------------------------------------#
 #------------------------------ numpy <--> torch -----------------------------#
@@ -86,7 +86,7 @@ def to_img(x):
 def set_device(device):
 	DEVICE = device
 	if 'cuda' in device:
-		torch.set_default_tensor_type(torch.FloatTensor)
+		torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
 def batch_to_device(batch, device='cuda:0'):
     vals = [
