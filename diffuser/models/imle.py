@@ -96,11 +96,35 @@ class IMLEModel(nn.Module):
 
     
     def loss(self, x, cond):
-        zs = torch.randn_like(x)
-        cond_tensor = torch.stack([cond[key] for key in sorted(cond.keys())], dim=1)
-        cond_tensor = cond_tensor.view(cond_tensor.size(0), -1)
-        generated = self.generator(zs, cond_tensor).detach()
-        nns = torch.tensor([find_nn(d, generated) for d in x], dtype=torch.long, device=x.device)
-        imle_nn_z = zs[nns] + torch.randn_like(zs[nns]) * self.noise_coef
-        outs = self.generator(imle_nn_z, cond_tensor)
+        # zs = torch.randn_like(x)
+        # cond_tensor = torch.stack([cond[key] for key in sorted(cond.keys())], dim=1)
+        # cond_tensor = cond_tensor.view(cond_tensor.size(0), -1)
+        # print("cond_imle: ", cond_tensor.shape)
+        # print("zs: ", zs.shape)
+        # generated = self.generator(zs, cond_tensor).detach()
+        # nns = torch.tensor([find_nn(d, generated) for d in x], dtype=torch.long, device=x.device)
+        # imle_nn_z = zs[nns] + torch.randn_like(zs[nns]) * self.noise_coef
+        # outs = self.generator(imle_nn_z, cond_tensor)
+        # return self.loss_fn(outs, x)
+    
+        with torch.no_grad():
+            # if epoch % self.staleness == 0:
+
+            self.generator.eval()
+            
+            # zs = torch.randn_like(x)
+            zs = torch.randn(x.shape[0]*self.sample_factor, *x.shape[1:], device=x.device)
+
+            cond_tensor = torch.stack([cond[key] for key in sorted(cond.keys())], dim=1) 
+            self.cond_tensor = cond_tensor.view(cond_tensor.size(0), -1)
+            cond_imle = self.cond_tensor.repeat_interleave(self.sample_factor, dim=0)
+            generated = self.generator(zs, cond_imle).detach()
+
+            nns = torch.tensor([find_nn(d, generated) for d in x], dtype=torch.long, device=x.device)
+            self.imle_nn_z = zs[nns] + torch.randn_like(zs[nns]) * self.noise_coef
+
+        self.generator.train()
+        outs = self.generator(self.imle_nn_z, self.cond_tensor)
+        
+        
         return self.loss_fn(outs, x)
