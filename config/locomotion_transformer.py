@@ -48,9 +48,11 @@ base = {
         'exp_name': watch(args_to_watch),
 
         ## training
-        'n_steps_per_epoch': 10000,
+        # 'n_steps_per_epoch': 10000,
+        'n_steps_per_epoch': 1000,
         'loss_type': 'l2',
-        'n_train_steps': 1e6,
+        # 'n_train_steps': 1e6,
+        'n_train_steps': 5000,
         'batch_size': 32,
         'learning_rate': 2e-4,
         'gradient_accumulate_every': 2,
@@ -61,7 +63,8 @@ base = {
         'save_parallel': False,
         'n_reference': 8,
         'bucket': None,
-        'device': 'mps',
+        # 'device': 'mps',
+        'device': 'cuda',
         'seed': None,
     },
 
@@ -104,7 +107,8 @@ base = {
         'save_parallel': False,
         'n_reference': 8,
         'bucket': None,
-        'device': 'mps',
+        # 'device': 'mps',
+        'device': 'cuda',
         'seed': None,
     },
 

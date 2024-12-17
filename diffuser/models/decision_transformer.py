@@ -83,7 +83,7 @@ class DecisionTransformer(nn.Module):
             nn.Linear(time_dim * 4, time_dim),
         )
 
-        self.position_embedding = nn.Embedding(horizon, hidden_size)
+        self.position_embedding = nn.Embedding(horizon + past_horizon, hidden_size)
         self.embed_state = torch.nn.Linear(self.observation_dim, hidden_size)
         self.embed_action = torch.nn.Linear(self.action_dim, hidden_size)
 

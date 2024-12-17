@@ -9,6 +9,8 @@ from .arrays import batch_to_device, to_np, to_device, apply_dict
 from .timer import Timer
 from .cloud import sync_logs
 
+import wandb
+
 def cycle(dl):
     while True:
         for data in dl:
@@ -100,6 +102,8 @@ class Trainer(object):
     #-----------------------------------------------------------------------------#
 
     def train(self, n_train_steps):
+        epoch_loss = 0
+        epoch_iter = 0
 
         timer = Timer()
         for step in range(n_train_steps):
@@ -110,6 +114,11 @@ class Trainer(object):
                 loss, infos = self.model.loss(*batch)
                 loss = loss / self.gradient_accumulate_every
                 loss.backward()
+                epoch_loss += loss.item()
+                epoch_iter += 1
+
+
+                wandb.log({"iteration loss": loss.item()})
 
             self.optimizer.step()
             self.optimizer.zero_grad()
@@ -117,21 +126,24 @@ class Trainer(object):
             if self.step % self.update_ema_every == 0:
                 self.step_ema()
 
-            if self.step % self.save_freq == 0:
-                label = self.step // self.label_freq * self.label_freq
-                self.save(label)
+            # if self.step % self.save_freq == 0:
+            #     # label = self.step // self.label_freq * self.label_freq
+            #     label = self.step
+            #     self.save(label)
 
             if self.step % self.log_freq == 0:
                 infos_str = ' | '.join([f'{key}: {val:8.4f}' for key, val in infos.items()])
                 print(f'{self.step}: {loss:8.4f} | {infos_str} | t: {timer():8.4f}', flush=True)
 
-            if self.step == 0 and self.sample_freq:
-                self.render_reference(self.n_reference)
+            # if self.step == 0 and self.sample_freq:
+            #     self.render_reference(self.n_reference)
 
-            if self.sample_freq and self.step % self.sample_freq == 0:
-                self.render_samples()
+            # if self.sample_freq and self.step % self.sample_freq == 0:
+            #     self.render_samples()
 
             self.step += 1
+
+        wandb.log({"loss": epoch_loss / epoch_iter})    
 
     def save(self, epoch):
         '''
