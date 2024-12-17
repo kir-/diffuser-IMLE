@@ -119,7 +119,7 @@ class Trainer(object):
                 epoch_loss += loss.item()
                 epoch_iter += 1
 
-                wandb.log({"iteration loss": loss.item()})
+                # wandb.log({"iteration loss": loss.item()})
 
             self.optimizer.step()
             self.optimizer.zero_grad()
@@ -127,9 +127,9 @@ class Trainer(object):
             if self.step % self.update_ema_every == 0:
                 self.step_ema()
 
-            # if self.step % self.save_freq == 0:
-            #     label = self.step // self.label_freq * self.label_freq
-            #     self.save(label)
+            if self.step % self.save_freq == 0:
+                label = self.step // self.label_freq * self.label_freq
+                self.save(label)
 
             if self.step % self.log_freq == 0:
                 infos_str = ' | '.join([f'{key}: {val:8.4f}' for key, val in infos.items()])
@@ -143,7 +143,7 @@ class Trainer(object):
 
             self.step += 1
         
-        wandb.log({"loss": epoch_loss / epoch_iter})    
+        # wandb.log({"loss": epoch_loss / epoch_iter})    
 
     def save(self, epoch):
         '''

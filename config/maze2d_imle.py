@@ -40,11 +40,13 @@ base = {
         'action_weight': 1,
         'loss_weights': None,
         'loss_discount': 1,
-        'dim_mults': (1, 4, 8),
+        # 'dim_mults': (1, 4, 8),
+        'dim_mults': (1, 2, 4, 8, 16),
         'attention': False,
         'renderer': 'utils.Maze2dRenderer',
         'staleness': 5,  # Number of epochs before updating nearest neighbors
-        'sample_factor': 10,  # Number of samples per training point
+        # 'sample_factor': 10,  # Number of samples per training point
+        'sample_factor': 20,
         'noise_coef': 0.01,  # Noise coefficient for perturbing z-space,
         'z_dim': 32, # Latent Space Dimension
 
@@ -66,13 +68,15 @@ base = {
         # 'n_steps_per_epoch': 10000,
         'n_steps_per_epoch': 1000,
         'loss_type': 'l2',
-        # 'n_train_steps': 2e6,
-        'n_train_steps': 2e4,
+        'n_train_steps': 2e6,
+        # 'n_train_steps': 2e4,
         'batch_size': 32,
-        'learning_rate': 2e-4,
+        # 'learning_rate': 2e-4,
+        'learning_rate': 0.0001,
         'gradient_accumulate_every': 2,
         'ema_decay': 0.995,
-        'save_freq': 1000,
+        # 'save_freq': 1000,
+        'save_freq': 20000,
         'sample_freq': 1000,
         'n_saves': 50,
         'save_parallel': False,
@@ -91,7 +95,8 @@ base = {
         'n_diffusion_steps': 256,
         'normalizer': 'LimitsNormalizer',
         'staleness': 5,  # Sync with model staleness
-        'sample_factor': 10,
+        # 'sample_factor': 10,
+        'sample_factor': 20,
 
         ## serialization
         'vis_freq': 10,
